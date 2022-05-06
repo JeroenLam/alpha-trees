@@ -19,7 +19,7 @@ int main(int argc, char const *argv[]) {
         return 0;
     }
 
-    string src = IMAGE_EXAMPLES + "bird.ppm";
+    string src = IMAGE_EXAMPLES + "landscape.ppm";
     string dest = IMAGE_OUTPUT + "gray.ppm";
 
     cout << "processing..." << endl;

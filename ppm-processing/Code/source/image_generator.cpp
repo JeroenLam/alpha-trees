@@ -117,7 +117,6 @@ void ImageGenerator::apply_grayscale_filter(string src, string dest) {
 
         // apply filter
         int mean_val = (src_color.r + src_color.g + src_color.b) / 3;
-        printf("MEAN: %d\n", mean_val);
         r = mean_val;
         g = mean_val;
         b = mean_val;
