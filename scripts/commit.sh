@@ -1,7 +1,4 @@
 #!/bin/bash
-# adds all current files to git, creates a commit with message given as 
-# command line arguments or as input then pushes to the current branch if wanted
-git add -A
 
 # this reads all the command line arguments and megerges them into one string
 commit_msg="$*"
@@ -11,6 +8,10 @@ then
     echo Enter commit message:
     read commit_msg
 fi
+
+# adds all current files to git, creates a commit with message given as 
+# command line arguments or as input then pushes to the current branch if wanted
+git add -A
 
 git commit -m "$commit_msg"
 
