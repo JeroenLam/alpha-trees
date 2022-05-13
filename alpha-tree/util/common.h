@@ -40,3 +40,12 @@ extern double omegafactor;
 // input and output images as arrays of pixel
 extern Pixel *gval;
 extern Pixel *out;
+
+// edge detection and salience functions
+extern SalienceFunction salienceFunction;
+extern EdgeStrengthFunction edgeStrengthX;
+extern EdgeStrengthFunction edgeStrengthY;
+extern EdgeStrengthFunction edgeStrengthTL_BR;
+extern EdgeStrengthFunction edgeStrengthBL_TR;
+// option for normalizing 
+extern boolean normalize;

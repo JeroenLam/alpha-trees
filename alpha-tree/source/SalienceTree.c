@@ -4,15 +4,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-// Set the function you want to use to compute the alpha between two pixels here
-SalienceFunction salienceFunction = &WeightedEuclideanDistance;
-// Set the functions you want to use to compute edge strength here
-EdgeStrengthFunction edgeStrengthX = &EdgeStrengthX;
-EdgeStrengthFunction edgeStrengthY = &EdgeStrengthY;
-// diagonals for 8-Connectivity
-EdgeStrengthFunction edgeStrengthTL_BR = NULL;
-EdgeStrengthFunction edgeStrengthBL_TR = NULL;
-
 /**
  * @brief Create a Salience Tree object
  * 
@@ -293,7 +284,6 @@ void Union2(SalienceTree *tree, int *root, int p, int q)
  */
 void Phase1(SalienceTree *tree, EdgeQueue *queue, int *root, Pixel *img, int width, int height, double lambdamin)
 {
-  // TODO make the EdgeStrength functions replaceable so that we can use different dissimilarity measures
   /* pre: tree has been created with imgsize= width*height
           queue initialized accordingly;
    */

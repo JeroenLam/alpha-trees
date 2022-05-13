@@ -19,7 +19,10 @@ double EuclideanDistance(Pixel p, Pixel q)
 
   for (i = 0; i < 3; i++)
     result += ((double)p[i] - (double)q[i]) * ((double)p[i] - (double)q[i]);
-  return sqrt(result);
+  result = sqrt(result);
+  if (normalize)
+    result = Map(result, 0.0, sqrt(3*255*255), SalienceRange[0], SalienceRange[1]);
+  return result;
 }
 
 /**
@@ -39,7 +42,10 @@ double WeightedEuclideanDistance(Pixel p, Pixel q)
 
   for (i = 0; i < 3; i++)
     result += RGBweight[i] * ((double)p[i] - (double)q[i]) * ((double)p[i] - (double)q[i]);
-  return sqrt(result);
+  result = sqrt(result);
+  if (normalize)
+    result = Map(result, 0.0, sqrt(3.0*255.0*255.0), SalienceRange[0], SalienceRange[1]);
+  return result;
 }
 
 /**
@@ -59,6 +65,8 @@ double ManhattenDistance(Pixel p, Pixel q)
   {
     result += (double)fabs((double)p[i] - (double)q[i]);
   }
+  if (normalize)
+    result = Map(result, 0.0, 765.0, SalienceRange[0], SalienceRange[1]);
   return result;
 }
 
@@ -78,5 +86,8 @@ double CosineDistance(Pixel p, Pixel q)
   double mag_p = Magnitude(p);
   double mag_q = Magnitude(q);
   double cosine = fabs(dot_product / (mag_p * mag_q));
-  return (1.0 - cosine);
+  double result = 1.0 - cosine;
+  if (normalize)
+    result = Map(result, 0.0, 1.0, SalienceRange[0], SalienceRange[1]);
+  return result;
 }

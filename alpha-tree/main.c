@@ -13,6 +13,7 @@
 #include "util/common.h"
 #include "util/PPMImageReadWrite.h"
 #include "util/EdgeDetection.h"
+#include "util/DistanceMeasures.h"
 #include "util/TreeFilter.h"
 #include "source/EdgeQueue.h"
 #include "source/SalienceTree.h"
@@ -20,7 +21,7 @@
 double RGBweight[3] = {0.5, 0.5, 0.5};
 double MainEdgeWeight = 1.0;
 double OrthogonalEdgeWeight = 1.0;
-double SalienceRange[2] = {0, 100};
+double SalienceRange[2] = {0, 10000};
 
 // variables
 int width, height, size;
@@ -30,6 +31,16 @@ double omegafactor = 200000;
 // input and output images as arrays of pixel
 Pixel *gval = NULL;
 Pixel *out = NULL;
+
+// Set the function you want to use to compute the alpha between two pixels here
+SalienceFunction salienceFunction = &CosineDistance;
+// Set the functions you want to use to compute edge strength here
+EdgeStrengthFunction edgeStrengthX = &EdgeStrengthX;
+EdgeStrengthFunction edgeStrengthY = &EdgeStrengthY;
+// diagonals for 8-Connectivity
+EdgeStrengthFunction edgeStrengthTL_BR = NULL;
+EdgeStrengthFunction edgeStrengthBL_TR = NULL;
+boolean normalize = true;
 
 int main(int argc, char *argv[])
 {
