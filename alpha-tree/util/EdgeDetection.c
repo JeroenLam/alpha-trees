@@ -9,7 +9,7 @@
  * @param q Second Pixel
  * @return double result of the computation
  */
-double simpleSalience(Pixel p, Pixel q)
+double SimpleSalience(Pixel p, Pixel q)
 {
   double result = 0;
   int i;
@@ -45,20 +45,21 @@ double WeightedSalience(Pixel p, Pixel q)
  * @param height of the image
  * @param x x-coordinate of the position
  * @param y y-coordinate of the position
+ * @param Salience Pointer to a function computing the salience between two pixels
  * @return double The edge strength
  */
-double EdgeStrengthX(Pixel *img, int width, int height, int x, int y)
+double EdgeStrengthX(Pixel *img, int width, int height, int x, int y, SalienceFunction Salience)
 {
   int yminus1 = y - (y > 0);
   int yplus1 = y + (y < height - 1);
 
   // We use the minimum salience between the sourrounding rows at (x-1) and x
   double ygrad = MIN(
-    WeightedSalience(
+    Salience(
       img[width * yminus1 + x - 1],
       img[width * yplus1 + x - 1]
     ),
-    WeightedSalience(
+    Salience(
       img[width * yminus1 + x],
       img[width * yplus1 + x]
     )
@@ -67,7 +68,7 @@ double EdgeStrengthX(Pixel *img, int width, int height, int x, int y)
     OrthogonalEdgeWeight * 
     ygrad + 
     MainEdgeWeight *
-    WeightedSalience(
+    Salience(
       img[width * y + x - 1],
       img[width * y + x]
     )
@@ -84,18 +85,18 @@ double EdgeStrengthX(Pixel *img, int width, int height, int x, int y)
  * @param y y-coordinate of the position
  * @return double The edge strength
  */
-double EdgeStrengthY(Pixel *img, int width, int height, int x, int y)
+double EdgeStrengthY(Pixel *img, int width, int height, int x, int y, SalienceFunction Salience)
 {
   int xminus1 = x - (x > 0);
   int xplus1 = x + (x < width - 1);
 
   // We use the minimum salience between the sourrounding columns at (y-1) and y
   double xgrad = MIN(
-    WeightedSalience(
+    Salience(
       img[width * y + xplus1],
       img[width * y + xminus1]
     ),
-    WeightedSalience(
+    Salience(
       img[width * (y - 1) + xplus1],
       img[width * (y - 1) + xminus1]
     )
@@ -104,7 +105,7 @@ double EdgeStrengthY(Pixel *img, int width, int height, int x, int y)
     OrthogonalEdgeWeight * 
     xgrad + 
     MainEdgeWeight *
-    WeightedSalience(
+    Salience(
       img[width * (y - 1) + x],
       img[width * y + x]
     )

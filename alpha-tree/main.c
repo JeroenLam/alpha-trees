@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
   float musec;
   SalienceTree *tree;
 
-  // Check if the right amount of arguments are provided and set variables accirding to them
+  // Check if the right amount of arguments are provided and set variables according to them
   if (argc < 3)
   {
     printf("Usage: %s <input image> <lambda>  [omegafactor] [output image] \n", argv[0]);

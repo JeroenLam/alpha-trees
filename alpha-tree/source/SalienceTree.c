@@ -3,6 +3,15 @@
 #include <stdlib.h>
 #include <assert.h>
 
+// Set the function you want to use to compute the alpha between two pixels here
+SalienceFunction salienceFunction = &WeightedSalience;
+// Set the functions you want to use to compute edge strength here
+EdgeStrengthFunction edgeStrengthX = &EdgeStrengthX;
+EdgeStrengthFunction edgeStrengthY = &EdgeStrengthY;
+// diagonals for 8-Connectivity
+EdgeStrengthFunction edgeStrengthTL_BR = NULL;
+EdgeStrengthFunction edgeStrengthBL_TR = NULL;
+
 /**
  * @brief Create a Salience Tree object
  * 
@@ -299,7 +308,7 @@ void Phase1(SalienceTree *tree, EdgeQueue *queue, int *root, Pixel *img, int wid
   {
     // ready current node and find edge strength of the current position
     MakeSet(tree, root, img, x);
-    edgeSalience = EdgeStrengthX(img, width, height, x, 0);
+    edgeSalience = edgeStrengthX(img, width, height, x, 0, salienceFunction);
     if (edgeSalience < lambdamin)
     {
       // if we evaluate as no edge then we combine the current and last pixel
@@ -319,7 +328,7 @@ void Phase1(SalienceTree *tree, EdgeQueue *queue, int *root, Pixel *img, int wid
     p = y * width;
     // ready current node and find edge strength of the current position
     MakeSet(tree, root, img, p);
-    edgeSalience = EdgeStrengthY(img, width, height, 0, y);
+    edgeSalience = edgeStrengthY(img, width, height, 0, y, salienceFunction);
 
     if (edgeSalience < lambdamin)
     {
@@ -337,7 +346,7 @@ void Phase1(SalienceTree *tree, EdgeQueue *queue, int *root, Pixel *img, int wid
     {
       // reapeat process in y-direction
       MakeSet(tree, root, img, p);
-      edgeSalience = EdgeStrengthY(img, width, height, x, y);
+      edgeSalience = edgeStrengthY(img, width, height, x, y, salienceFunction);
       if (edgeSalience < lambdamin)
       {
         Union(tree, root, p, p - width);
@@ -347,7 +356,7 @@ void Phase1(SalienceTree *tree, EdgeQueue *queue, int *root, Pixel *img, int wid
         EdgeQueuePush(queue, p, p - width, edgeSalience);
       }
       // repeat process in x-direction
-      edgeSalience = EdgeStrengthX(img, width, height, x, y);
+      edgeSalience = edgeStrengthX(img, width, height, x, y, salienceFunction);
       if (edgeSalience < lambdamin)
       {
         Union(tree, root, p, p - 1);

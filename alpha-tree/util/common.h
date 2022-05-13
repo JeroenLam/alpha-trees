@@ -23,6 +23,9 @@ typedef unsigned char ubyte;
 // => Pixel is an array of 3 colors in range [0,255]
 typedef ubyte Pixel[3];
 
+typedef double (*SalienceFunction)(Pixel, Pixel);
+typedef double (*EdgeStrengthFunction)(Pixel *, int, int, int, int, SalienceFunction);
+
 // constants 
 extern double RGBweight[3];
 extern double MainEdgeWeight;
