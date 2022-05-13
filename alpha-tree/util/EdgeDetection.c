@@ -2,42 +2,6 @@
 #include <math.h>
 
 /**
- * @brief Computes the salience between two pixels using an unweighted average.
- * computes sqrt(sum((P1 - P2)^2))
- * 
- * @param p First Pixel
- * @param q Second Pixel
- * @return double result of the computation
- */
-double SimpleSalience(Pixel p, Pixel q)
-{
-  double result = 0;
-  int i;
-
-  for (i = 0; i < 3; i++)
-    result += ((double)p[i] - (double)q[i]) * ((double)p[i] - (double)q[i]);
-  return sqrt(result);
-}
-
-/**
- * @brief Computes the salience between two pixels using a weighted average.
- * computes sqrt(sum(W*(P1 - P2)^2))
- * 
- * @param p First Pixel
- * @param q Second Pixel
- * @return double result of the computation
- */
-double WeightedSalience(Pixel p, Pixel q)
-{
-  double result = 0;
-  int i;
-
-  for (i = 0; i < 3; i++)
-    result += RGBweight[i] * ((double)p[i] - (double)q[i]) * ((double)p[i] - (double)q[i]);
-  return sqrt(result);
-}
-
-/**
  * @brief Computes the edge strength in the x direction at a given position (x,y)
  * 
  * @param img Image to compute in

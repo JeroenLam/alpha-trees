@@ -30,6 +30,7 @@ typedef double (*EdgeStrengthFunction)(Pixel *, int, int, int, int, SalienceFunc
 extern double RGBweight[3];
 extern double MainEdgeWeight;
 extern double OrthogonalEdgeWeight;
+extern double SalienceRange[2];
 
 // variables
 extern int width, height, size;

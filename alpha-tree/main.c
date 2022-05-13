@@ -20,6 +20,7 @@
 double RGBweight[3] = {0.5, 0.5, 0.5};
 double MainEdgeWeight = 1.0;
 double OrthogonalEdgeWeight = 1.0;
+double SalienceRange[2] = {0, 100};
 
 // variables
 int width, height, size;

@@ -1,10 +1,11 @@
 #include "SalienceTree.h"
 #include "../util/EdgeDetection.h"
+#include "../util/DistanceMeasures.h"
 #include <stdlib.h>
 #include <assert.h>
 
 // Set the function you want to use to compute the alpha between two pixels here
-SalienceFunction salienceFunction = &WeightedSalience;
+SalienceFunction salienceFunction = &WeightedEuclideanDistance;
 // Set the functions you want to use to compute edge strength here
 EdgeStrengthFunction edgeStrengthX = &EdgeStrengthX;
 EdgeStrengthFunction edgeStrengthY = &EdgeStrengthY;
