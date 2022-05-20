@@ -48,3 +48,13 @@ double Map(double x, double lower_in, double upper_in, double lower_out, double 
 {
   return lower_out + ((upper_out - lower_out) / (upper_in - lower_in)) * (x - lower_in);
 }
+
+/**
+ * @brief Prints the values of a given Pixel to stdout
+ * 
+ * @param p Pixel to investigate
+ */
+void printPixel(Pixel p)
+{
+  printf("{%d,%d,%d}", p[0], p[1], p[2]);
+}

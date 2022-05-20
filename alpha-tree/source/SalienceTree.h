@@ -33,6 +33,7 @@ int NewSalienceNode(SalienceTree *tree, int *root, double alpha);
 int FindRoot(int *root, int p);
 int FindRoot1(SalienceTree *tree, int *root, int p);
 int LevelRoot(SalienceTree *tree, int p);
+int Depth(SalienceTree *tree, int p);
 boolean IsLevelRoot(SalienceTree *tree, int i);
 void MakeSet(SalienceTree *tree, int *root, Pixel *gval, int p);
 void GetAncestors(SalienceTree *tree, int *root, int *p, int *q);

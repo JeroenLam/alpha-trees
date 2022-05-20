@@ -36,6 +36,7 @@ extern double SalienceRange[2];
 extern int width, height, size;
 extern int lambda;
 extern double omegafactor;
+extern int *depths;
 
 // input and output images as arrays of pixel
 extern Pixel *gval;

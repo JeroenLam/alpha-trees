@@ -23,7 +23,6 @@ SalienceTree *MakeSalienceTree(Pixel *img, int width, int height, double lambdam
 {
   int imgsize = width * height;
   EdgeQueue *queue = EdgeQueueCreate((CONNECTIVITY / 2) * imgsize);
-  // TODO what does the root array represent?
   int *root = malloc(imgsize * 2 * sizeof(int));
   SalienceTree *tree;
   tree = CreateSalienceTree(imgsize);
@@ -401,4 +400,15 @@ void Phase2(SalienceTree *tree, EdgeQueue *queue, int *root, Pixel *img, int wid
     // store last edge alpha
     oldalpha = alpha12;
   }
+}
+
+int Depth(SalienceTree *tree, int p)
+{
+  int depth = 0;
+  while (tree->node[p].parent != BOTTOM)
+  {
+    depth++;
+    p = tree->node[p].parent;
+  }
+  return depth;
 }
