@@ -10,188 +10,67 @@ int max(int a, int b) {
     return a > b ? a : b;
 }
 
-ImageGenerator::ImageGenerator() {}
+// ---------------------------- Constructors ----------------------------
+ImageGenerator::ImageGenerator() {
+    Image_Height = 0;
+    Image_Width = 0;
+    RGB_Max = 0;
+    PPM_Type = "";
+}
 
-void ImageGenerator::generate_ppm_image(string fname, InitType mode, int width, int height) {
-    ofstream image;
+ImageGenerator::ImageGenerator(string fname) {
+    read_image_from_file(fname);
+}
 
-    image.open(fname);
+// ---------------------------- Getters & Setters ----------------------------
+Matrix ImageGenerator::get_image() {
+    vector< vector<Triple> > copy(Image);
+    return copy;
+}
 
-    srand(time(0));
+int ImageGenerator::get_height() {
+    return Image_Height;
+}
 
-    if (image.is_open()) {
-        // place header info
-        image << "P3" << endl;
-        image << width << " " << height << endl;
-        image << "255" << endl;
+int ImageGenerator::get_width() {
+    return Image_Width;
+}
 
-        int slope = height / width;
-        int rgb_x = 0, rgb_y = 0, rgb_z = 0;
+int ImageGenerator::get_rgb_max() {
+    return RGB_Max;
+}
 
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                Color c;
-                switch (mode) {
-                case RANDOM:
-                    c = Triple(rand() % 255, rand() % 255, rand() % 255);
-                    break;
-                case BLACK:
-                    c = Triple(0, 0, 0);
-                    break;
-                case RGB_SPLIT:
-                    c = rgb_split_color(x, y, slope, height);
-                    break;
-                case RGB_SPECTRUM:
-                    c = rgb_spectrum_color(rgb_x, rgb_y, rgb_z);
-                    if (rgb_y >= 255 == 0) {
-                        rgb_x += 10;
-                        rgb_y = 0;
-                    } else {
-                        rgb_y += 10;
-                    }
-                    if (rgb_x >= 255 == 0) {
-                        rgb_z += 10;
-                        rgb_x = 0;
-                    } else {
-                        rgb_x += 10;
-                    }
-                    if (rgb_z >= 255) {
-                        rgb_z = 0;
-                    }
-                    break;
-                case WHITE:
-                default:
-                    c = Triple(255, 255, 255);
-                    break;
-                }
+string ImageGenerator::get_type() {
+    return PPM_Type;
+}
 
-                image << c.r << " " << c.g << " " << c.b << endl;
-            }
+// ---------------------------- util ----------------------------
+void ImageGenerator::print_image() {
+    for (size_t i = 0; i < Image_Height; i++) {
+        for (size_t j = 0; j < Image_Width; j++) { 
+            cout << Image[i][j];
         }
+        cout << endl;
     }
-    image.close();
 }
 
-void ImageGenerator::generate_ppm_horizontal_split(std::string fname, int split, int width, int height, int transition, Triple color1, Triple color2) {
-    ofstream image;
+void ImageGenerator::generate_ppm_image(Triple color, int width, int height) {
 
-    image.open(fname);
+    // place header info
+    PPM_Type = "P3";
+    Image_Width = width;
+    Image_Height = height;
+    RGB_Max = 255;
 
-
-    if (image.is_open()) {
-        // place header info
-        image << "P3" << endl;
-        image << width << " " << height << endl;
-        image << "255" << endl;
-
-        int rgb_x = 0, rgb_y = 0, rgb_z = 0;
-        Color c;
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                c = (x <= split) ? color1 : color2;
-                if (transition && x == split) {
-                    c = (color2) + y * ((color2 - color1) / width);
-                }
-                image << c.r << " " << c.g << " " << c.b << endl;
-            }
+    Image.clear();
+    for (int y = 0; y < Image_Height; y++) {
+        Row curr_row;
+        for (int x = 0; x < Image_Width; x++) {
+            Color c = Triple(color);
+            curr_row.push_back(c);
         }
+        Image.push_back(curr_row);
     }
-    image.close();
-}
-
-void ImageGenerator::apply_grayscale_filter(string src, string dest) {
-    ifstream src_img;
-    ofstream dst_img;
-
-    src_img.open(src);
-    dst_img.open(dest);
-
-    copy_ppm_header(src_img, dst_img);
-    
-    Color src_color;
-    int r = 0, g = 0, b = 0;    
-    
-    while (!src_img.eof()) {
-        src_color = get_next_rgb(src_img);    
-
-        // apply filter
-        int mean_val = (src_color.r + src_color.g + src_color.b) / 3;
-        r = mean_val;
-        g = mean_val;
-        b = mean_val;
-
-        // write to destination
-        dst_img << r << " " << g << " " << b << endl;
-    }
-    src_img.close();
-    dst_img.close();
-}
-
-void ImageGenerator::apply_color_filter(string src, string dest, Triple filter) {
-    ifstream src_img;
-    ofstream dst_img;
-
-    src_img.open(src);
-    dst_img.open(dest);
-
-    copy_ppm_header(src_img, dst_img);
-    
-    Color src_color;
-    int r = 0, g = 0, b = 0;    
-    
-    while (!src_img.eof()) {
-        src_color = get_next_rgb(src_img);    
-
-        // apply filter
-        r = max(0, min(255, src_color.r + filter.r));
-        g = max(0, min(255, src_color.g + filter.g));
-        b = max(0, min(255, src_color.b + filter.b));
-
-        // write to destination
-        dst_img << r << " " << g << " " << b << endl;
-    }
-    src_img.close();
-    dst_img.close();
-}
-
-void ImageGenerator::apply_inverted_filter(string src, string dest) {
-    ifstream src_img;
-    ofstream dst_img;
-
-    src_img.open(src);
-    dst_img.open(dest);
-
-    copy_ppm_header(src_img, dst_img);
-    
-    Color src_color;
-    int r = 0, g = 0, b = 0;    
-    
-    while (!src_img.eof()) {
-        src_color = get_next_rgb(src_img);    
-
-        // invert color
-        r = max(0, (255 - src_color.r));
-        g = max(0, (255 - src_color.g));
-        b = max(0, (255 - src_color.b));
-
-        // write to destination
-        dst_img << r << " " << g << " " << b << endl;
-    }
-    src_img.close();
-    dst_img.close();
-}
-
-void ImageGenerator::copy_ppm_header(ifstream &src, ofstream &dest) {
-    string type = "", width = "", height = "", RGB = "";
-    src >> type;
-    src >> width;
-    src >> height;
-    src >> RGB;
-
-    dest << type << endl;
-    dest << width << " " << height << endl;
-    dest << RGB << endl;
 }
 
 Triple ImageGenerator::get_next_rgb(ifstream &src) {
@@ -214,42 +93,128 @@ Triple ImageGenerator::get_next_rgb(ifstream &src) {
     return Triple(r, g, b);
 }
 
-Triple ImageGenerator::rgb_split_color(int x, int y, int slope, int height) {
-    // diagonals across the square
-    // bottom left to top right
-    if (y == -slope * x + height) {
-        return Triple(0, 0, 0); 
+// ---------------------------- Image Filters ----------------------------
+
+void ImageGenerator::apply_grayscale_filter() {
+    for (int y = 0; y < Image_Height; y++) {
+        for (int x = 0; x < Image_Width; x++) {
+            Triple src_color = Image[y][x];
+            int mean_val = (src_color.r + src_color.g + src_color.b) / 3;
+            Image[y][x] = Color(mean_val, mean_val, mean_val);
+        }
     }
-    // top left to bottom right
-    if (y == slope * x) {
-        return Triple(0, 0, 0);
-    }
-    // fill in left triangle
-    if ((y > slope * x) && (y < -slope * x + height)) {
-        return Triple(255, 0, 0);
-    }
-    // fill in the right triangle
-    if ((y < slope * x) && (y > -slope * x + height)) {
-        return Triple(0, 0, 255);
-    }
-    // fill in the top triangle
-    if (x > y) {
-        return Triple(0, 255, 0);
-    }
-    // fill in the bottom triangle
-    if (x < y) {
-        return Triple(150, 94, 19);
-    }
-    return Triple(255, 255, 255);
 }
 
-Triple ImageGenerator::rgb_spectrum_color(int x, int y, int z) {
-    int red = 0, green = 0, blue = 0;
-    // x runs over the g channel of the RGB cube
-    // y runs over the r channel of the RGB cube
-    // z runs over the b channel of the RGB cube
-    red = x % 255;
-    green = y % 255;
-    blue = z % 255;
-    return Triple(red, green, blue);
+void ImageGenerator::apply_color_filter(Triple filter) {
+    int r = 0, g = 0, b = 0;
+    for (int y = 0; y < Image_Height; y++) {
+        for (int x = 0; x < Image_Width; x++) {
+            Triple src_color = Image[y][x];
+            r = max(0, min(255, src_color.r + filter.r));
+            g = max(0, min(255, src_color.g + filter.g));
+            b = max(0, min(255, src_color.b + filter.b));
+            Image[y][x] = Color(r, g, b);
+        }
+    }
+}
+
+void ImageGenerator::apply_inverted_filter() {
+    int r = 0, g = 0, b = 0;
+    for (int y = 0; y < Image_Height; y++) {
+        for (int x = 0; x < Image_Width; x++) {
+            Triple src_color = Image[y][x];
+            r = max(0, (255 - src_color.r));
+            g = max(0, (255 - src_color.g));
+            b = max(0, (255 - src_color.b));
+            Image[y][x] = Color(r, g, b);
+        }
+    }
+}
+
+// ---------------------------- Graphics Operations ----------------------------
+
+void ImageGenerator::fill_with_color(Triple color) {
+    for (int y = 0; y < Image_Height; y++) {
+        for (int x = 0; x < Image_Width; x++) {
+            Image[y][x] = Color(color);
+        }
+    }
+}
+
+void ImageGenerator::draw_line(Triple color, int x1, int y1, int x2, int y2) {
+    if (x1 < 0 || x1 > Image_Width ||
+        x2 < 0 || x2 > Image_Width ||
+        y1 < 0 || y1 > Image_Height ||
+        y2 < 0 || y2 > Image_Height
+    ) {
+        cout << "One or both points of the line exceed image dimensions. Aborting line drawing!" << endl;
+        return;
+    }
+}
+
+// ---------------------------- IO Operations ----------------------------
+
+void ImageGenerator::read_image_from_file(string fname) {
+    ifstream image;
+
+    image.open(fname);
+
+    if (image.is_open()) {
+        string type = "", width = "", height = "", RGB = "";
+        image >> type;
+        image >> width;
+        image >> height;
+        image >> RGB;
+
+        stringstream height_stream(height);
+        stringstream width_stream(width);
+        stringstream rgb_stream(RGB);
+
+        height_stream >> Image_Height;
+        width_stream >> Image_Width;
+        rgb_stream >> RGB_Max;
+        PPM_Type = type;
+
+        Image.clear();
+        for (size_t i = 0; i < Image_Height; i++) {
+            Row curr_row;
+            for (size_t j = 0; j < Image_Width; j++) {
+                Triple next_col = get_next_rgb(image);
+                curr_row.push_back(next_col);
+            }
+            Image.push_back(curr_row);
+        }
+
+    } else {
+        printf("Error while loading PPM Image\n");
+        exit(1);
+    }
+
+    image.close();
+}
+
+void ImageGenerator::save_image_to_file(std::string fname) {
+    ofstream image;
+
+    image.open(fname);
+
+    if (image.is_open()) {
+        image << PPM_Type << endl;
+        image << Image_Width << " " << Image_Height << endl;
+        image << RGB_Max << endl;
+
+        for (size_t i = 0; i < Image_Height; i++) {
+            for (size_t j = 0; j < Image_Width; j++) {
+                Color curr_col = Image[i][j];
+                image << curr_col.r << " " << curr_col.g << " " << curr_col.b << " ";
+            }
+            image << endl;
+        }
+        
+    } else {
+        cout << "Error while trying to write to file" << fname << endl;
+        exit(1);
+    }
+
+    image.close();
 }
