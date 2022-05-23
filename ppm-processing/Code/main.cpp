@@ -17,13 +17,29 @@ int main(int argc, char const *argv[]) {
         return 0;
     }
 
+
     string src = IMAGE_EXAMPLES + "bird.ppm";
     string dest = IMAGE_OUTPUT + "output.ppm";
 
     ImageGenerator image = ImageGenerator();
-    image.generate_ppm_image(Color(255,255,255), 10, 10);
+    image.generate_ppm_image(Color(0,255,255), 100, 100);
 
-    
+    int line_thickness = 1;
+    int line[4] = {
+        14,
+        25,
+        67,
+        12
+    };
+    // int line[4] = {
+    //     0,
+    //     9,
+    //     4,
+    //     0
+    // };
+    image.draw_line(Color(0,0,0), line[0], line[1], line[2], line[3], line_thickness);
+
+    image.draw_line(Color(0,0,0), line[2], line[1], line[3], line[0], line_thickness);
 
     image.save_image_to_file(dest);
     

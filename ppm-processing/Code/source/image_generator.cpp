@@ -10,6 +10,10 @@ int max(int a, int b) {
     return a > b ? a : b;
 }
 
+bool d_eq(double a, double b) {
+    return abs(a - b) < 0.0001;
+}
+
 // ---------------------------- Constructors ----------------------------
 ImageGenerator::ImageGenerator() {
     Image_Height = 0;
@@ -141,14 +145,127 @@ void ImageGenerator::fill_with_color(Triple color) {
     }
 }
 
-void ImageGenerator::draw_line(Triple color, int x1, int y1, int x2, int y2) {
-    if (x1 < 0 || x1 > Image_Width ||
-        x2 < 0 || x2 > Image_Width ||
-        y1 < 0 || y1 > Image_Height ||
-        y2 < 0 || y2 > Image_Height
+void ImageGenerator::draw_line(Triple color, int x1, int y1, int x2, int y2, int thickness) {
+    if (x1 < 0 || x1 >= Image_Width ||
+        x2 < 0 || x2 >= Image_Width ||
+        y1 < 0 || y1 >= Image_Height ||
+        y2 < 0 || y2 >= Image_Height
     ) {
         cout << "One or both points of the line exceed image dimensions. Aborting line drawing!" << endl;
         return;
+    }
+    // ensures that (x1,y1) is left of (x2,y2)
+    if (x1 > x2) {
+        int temp = x1;
+        x1 = x2;
+        x2 = temp;
+        temp = y1;
+        y1 = y2;
+        y2 = temp;
+    }
+    // drawing straight lines
+    // horizontal
+    if (y1 == y2) {
+        int y = y1;
+        for (int x = x1; x <= x2; x++) {
+            draw_point(color, x, y, thickness);
+        }
+        return;
+    }
+    // vertical
+    if (x1 == x2) {
+        int x = x1;
+        for (int y = y1; y <= y2; y++) {
+            draw_point(color, x, y, thickness);
+        }
+        return;
+    }
+    double slope = (double)(y2 - y1) / (double)(x2 -x1);
+    double intersect = y1 - slope * x1;
+    // Midpoint line drawing algorithm
+    // octant 1
+    if (slope > 0.0 && slope <= 1.0) {
+        int y = y1;
+        double d = slope * (x1 + 1.0) + intersect - (y1 + 0.5);
+        double a = y1 - y2;
+        double b = x2 - x1;
+        for (int x = x1; x <= x2; x++) {
+            draw_point(color, x, y, thickness);
+            if (d < 0.0) {
+                y++;
+                d = d + a + b;
+            } else {
+                d = d + a;
+            }
+        }
+        return;
+    }
+    // octant 2
+    if (slope > 1.0) {
+        int x = x1;
+        double d = slope * (x1 + 0.5) + intersect - (y1 + 1.0);
+        double b = y2 - y1;
+        double a = x1 - x2;
+        for (int y = y1; y <= y2; y++) {
+            draw_point(color, x, y, thickness);
+            if (d < 0.0) {
+                x++;
+                d = d + a + b;
+            } else {
+                d = d + a;
+            }
+        }
+        return;
+    }
+    // octant 3
+    if (slope < -1.0) {
+        int x = x1;
+        double d = slope * (x1 + 0.5) + intersect - (y1 - 1.0);
+        double b = y1 - y2;
+        double a = x1 - x2;
+        for (int y = y1; y >= y2; y--) {
+            draw_point(color, x, y, thickness);
+            if (d < 0.0) {
+                x++;
+                d = d + a + b;
+            } else {
+                d = d + a;
+            }
+        }
+        return;
+    }
+    // octant 4
+    if (slope < 0.0 && slope >= -1.0) {
+        int y = y1;
+        double d = slope * (x1 + 1.0) + intersect - (y1 - 0.5);
+        double a = y2 - y1;
+        double b = x2 - x1;
+        for (int x = x1; x <= x2; x++) {
+            draw_point(color, x, y, thickness);
+            if (d < 0.0) {
+                y--;
+                d = d + a + b;
+            } else {
+                d = d + a;
+            }
+        }
+        return;
+    }
+}
+
+void ImageGenerator::draw_point(Triple color, int x, int y, int thickness) {
+    if (thickness > 1)  {
+        for (int i = -(thickness - 1); i < (thickness - 1); i++) {
+            for (int j = -(thickness - 1); j < (thickness - 1); j++) {
+                if (x + i >= 0 && x + i < Image_Width &&
+                    y + j >= 0 && y + j < Image_Height
+                ) {
+                    Image[y + j][x + i] = Color(color);
+                }
+            }
+        }
+    } else {
+        Image[y][x] = Color(color);
     }
 }
 
@@ -184,6 +301,7 @@ void ImageGenerator::read_image_from_file(string fname) {
             }
             Image.push_back(curr_row);
         }
+        reverse(Image.begin(), Image.end());
 
     } else {
         printf("Error while loading PPM Image\n");
@@ -203,6 +321,7 @@ void ImageGenerator::save_image_to_file(std::string fname) {
         image << Image_Width << " " << Image_Height << endl;
         image << RGB_Max << endl;
 
+        reverse(Image.begin(), Image.end());
         for (size_t i = 0; i < Image_Height; i++) {
             for (size_t j = 0; j < Image_Width; j++) {
                 Color curr_col = Image[i][j];
@@ -210,6 +329,7 @@ void ImageGenerator::save_image_to_file(std::string fname) {
             }
             image << endl;
         }
+        reverse(Image.begin(), Image.end());
         
     } else {
         cout << "Error while trying to write to file" << fname << endl;
