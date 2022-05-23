@@ -9,5 +9,6 @@
 
 void SalienceTreeAreaFilter(SalienceTree *tree, Pixel *out, int lambda);
 void SalienceTreeSalienceFilter(SalienceTree *tree, Pixel *out, double lambda);
+void SalienceTreeColorMapFilter(SalienceTree *tree, Pixel *out, double lambda);
 
 #endif

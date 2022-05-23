@@ -13,6 +13,7 @@
 #include "util/common.h"
 #include "util/PPMImageReadWrite.h"
 #include "util/EdgeDetection.h"
+#include "util/DistanceMeasures.h"
 #include "util/TreeFilter.h"
 #include "source/EdgeQueue.h"
 #include "source/SalienceTree.h"
@@ -20,6 +21,7 @@
 double RGBweight[3] = {0.5, 0.5, 0.5};
 double MainEdgeWeight = 1.0;
 double OrthogonalEdgeWeight = 1.0;
+double SalienceRange[2] = {0, 10000};
 
 // variables
 int width, height, size;
@@ -29,6 +31,16 @@ double omegafactor = 200000;
 // input and output images as arrays of pixel
 Pixel *gval = NULL;
 Pixel *out = NULL;
+
+// Set the function you want to use to compute the alpha between two pixels here
+SalienceFunction salienceFunction = &WeightedEuclideanDistance;
+// Set the functions you want to use to compute edge strength here
+EdgeStrengthFunction edgeStrengthX = &EdgeStrengthX;
+EdgeStrengthFunction edgeStrengthY = &EdgeStrengthY;
+// diagonals for 8-Connectivity
+EdgeStrengthFunction edgeStrengthTL_BR = NULL;
+EdgeStrengthFunction edgeStrengthBL_TR = NULL;
+boolean normalize = false;
 
 int main(int argc, char *argv[])
 {
@@ -42,7 +54,7 @@ int main(int argc, char *argv[])
   float musec;
   SalienceTree *tree;
 
-  // Check if the right amount of arguments are provided and set variables accirding to them
+  // Check if the right amount of arguments are provided and set variables according to them
   if (argc < 3)
   {
     printf("Usage: %s <input image> <lambda>  [omegafactor] [output image] \n", argv[0]);
@@ -82,6 +94,7 @@ int main(int argc, char *argv[])
   // here colors and areas are created etc.
   // SalienceTreeAreaFilter(tree,out,lambda);
   SalienceTreeSalienceFilter(tree, out, (double)lambda);
+  // SalienceTreeColorMapFilter(tree, out, (double)lambda);
 
   musec = (float)(times(&tstruct) - start) / ((float)tickspersec);
 

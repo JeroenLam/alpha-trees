@@ -1,5 +1,6 @@
 #include "SalienceTree.h"
 #include "../util/EdgeDetection.h"
+#include "../util/DistanceMeasures.h"
 #include <stdlib.h>
 #include <assert.h>
 
@@ -22,7 +23,6 @@ SalienceTree *MakeSalienceTree(Pixel *img, int width, int height, double lambdam
 {
   int imgsize = width * height;
   EdgeQueue *queue = EdgeQueueCreate((CONNECTIVITY / 2) * imgsize);
-  // TODO what does the root array represent?
   int *root = malloc(imgsize * 2 * sizeof(int));
   SalienceTree *tree;
   tree = CreateSalienceTree(imgsize);
@@ -283,7 +283,6 @@ void Union2(SalienceTree *tree, int *root, int p, int q)
  */
 void Phase1(SalienceTree *tree, EdgeQueue *queue, int *root, Pixel *img, int width, int height, double lambdamin)
 {
-  // TODO make the EdgeStrength functions replaceable so that we can use different dissimilarity measures
   /* pre: tree has been created with imgsize= width*height
           queue initialized accordingly;
    */
@@ -299,7 +298,7 @@ void Phase1(SalienceTree *tree, EdgeQueue *queue, int *root, Pixel *img, int wid
   {
     // ready current node and find edge strength of the current position
     MakeSet(tree, root, img, x);
-    edgeSalience = EdgeStrengthX(img, width, height, x, 0);
+    edgeSalience = edgeStrengthX(img, width, height, x, 0, salienceFunction);
     if (edgeSalience < lambdamin)
     {
       // if we evaluate as no edge then we combine the current and last pixel
@@ -319,7 +318,7 @@ void Phase1(SalienceTree *tree, EdgeQueue *queue, int *root, Pixel *img, int wid
     p = y * width;
     // ready current node and find edge strength of the current position
     MakeSet(tree, root, img, p);
-    edgeSalience = EdgeStrengthY(img, width, height, 0, y);
+    edgeSalience = edgeStrengthY(img, width, height, 0, y, salienceFunction);
 
     if (edgeSalience < lambdamin)
     {
@@ -337,7 +336,7 @@ void Phase1(SalienceTree *tree, EdgeQueue *queue, int *root, Pixel *img, int wid
     {
       // reapeat process in y-direction
       MakeSet(tree, root, img, p);
-      edgeSalience = EdgeStrengthY(img, width, height, x, y);
+      edgeSalience = edgeStrengthY(img, width, height, x, y, salienceFunction);
       if (edgeSalience < lambdamin)
       {
         Union(tree, root, p, p - width);
@@ -347,7 +346,7 @@ void Phase1(SalienceTree *tree, EdgeQueue *queue, int *root, Pixel *img, int wid
         EdgeQueuePush(queue, p, p - width, edgeSalience);
       }
       // repeat process in x-direction
-      edgeSalience = EdgeStrengthX(img, width, height, x, y);
+      edgeSalience = edgeStrengthX(img, width, height, x, y, salienceFunction);
       if (edgeSalience < lambdamin)
       {
         Union(tree, root, p, p - 1);
@@ -401,4 +400,15 @@ void Phase2(SalienceTree *tree, EdgeQueue *queue, int *root, Pixel *img, int wid
     // store last edge alpha
     oldalpha = alpha12;
   }
+}
+
+int Depth(SalienceTree *tree, int p)
+{
+  int depth = 0;
+  while (tree->node[p].parent != BOTTOM)
+  {
+    depth++;
+    p = tree->node[p].parent;
+  }
+  return depth;
 }

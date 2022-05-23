@@ -3,9 +3,9 @@
 
 #include "common.h"
 
-double simpleSalience(Pixel p, Pixel q);
-double WeightedSalience(Pixel p, Pixel q);
-double EdgeStrengthX(Pixel *img, int width, int height, int x, int y);
-double EdgeStrengthY(Pixel *img, int width, int height, int x, int y);
+double EdgeStrengthX(Pixel *img, int width, int height, int x, int y, SalienceFunction Salience);
+double EdgeStrengthY(Pixel *img, int width, int height, int x, int y, SalienceFunction Salience);
+double EdgeStrengthSimpleX(Pixel *img, int width, int height, int x, int y, SalienceFunction Salience);
+double EdgeStrengthSimpleY(Pixel *img, int width, int height, int x, int y, SalienceFunction Salience);
 
 #endif

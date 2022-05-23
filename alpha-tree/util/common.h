@@ -23,10 +23,14 @@ typedef unsigned char ubyte;
 // => Pixel is an array of 3 colors in range [0,255]
 typedef ubyte Pixel[3];
 
+typedef double (*SalienceFunction)(Pixel, Pixel);
+typedef double (*EdgeStrengthFunction)(Pixel *, int, int, int, int, SalienceFunction);
+
 // constants 
 extern double RGBweight[3];
 extern double MainEdgeWeight;
 extern double OrthogonalEdgeWeight;
+extern double SalienceRange[2];
 
 // variables
 extern int width, height, size;
@@ -36,3 +40,12 @@ extern double omegafactor;
 // input and output images as arrays of pixel
 extern Pixel *gval;
 extern Pixel *out;
+
+// edge detection and salience functions
+extern SalienceFunction salienceFunction;
+extern EdgeStrengthFunction edgeStrengthX;
+extern EdgeStrengthFunction edgeStrengthY;
+extern EdgeStrengthFunction edgeStrengthTL_BR;
+extern EdgeStrengthFunction edgeStrengthBL_TR;
+// option for normalizing 
+extern boolean normalize;

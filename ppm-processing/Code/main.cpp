@@ -20,11 +20,11 @@ int main(int argc, char const *argv[]) {
     }
 
     string src = IMAGE_EXAMPLES + "landscape.ppm";
-    string dest = IMAGE_OUTPUT + "gray.ppm";
+    string dest = IMAGE_OUTPUT + "random.ppm";
 
     cout << "processing..." << endl;
-    provider.get_image_generator().apply_grayscale_filter(src, dest);
-    // provider.get_image_generator().generate_ppm_horizontal_split(dest, 50, 100, 100, 1, Triple(0,0,0), Triple(255,255,255));
+    // provider.get_image_generator().apply_grayscale_filter(src, dest);
+    provider.get_image_generator().generate_ppm_image(dest, RANDOM, 3, 3);
     cout << "image created" << endl;
     // provider.get_image_generator().apply_inverted_filter(src, dest);
     // cout << "filter applied" << endl;
