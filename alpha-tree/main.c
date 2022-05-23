@@ -26,7 +26,6 @@ double SalienceRange[2] = {0, 10000};
 // variables
 int width, height, size;
 int lambda;
-int *depths;
 double omegafactor = 200000;
 
 // input and output images as arrays of pixel
@@ -34,14 +33,14 @@ Pixel *gval = NULL;
 Pixel *out = NULL;
 
 // Set the function you want to use to compute the alpha between two pixels here
-SalienceFunction salienceFunction = &ManhattenDistance;
+SalienceFunction salienceFunction = &WeightedEuclideanDistance;
 // Set the functions you want to use to compute edge strength here
 EdgeStrengthFunction edgeStrengthX = &EdgeStrengthX;
 EdgeStrengthFunction edgeStrengthY = &EdgeStrengthY;
 // diagonals for 8-Connectivity
 EdgeStrengthFunction edgeStrengthTL_BR = NULL;
 EdgeStrengthFunction edgeStrengthBL_TR = NULL;
-boolean normalize = true;
+boolean normalize = false;
 
 int main(int argc, char *argv[])
 {
@@ -93,8 +92,8 @@ int main(int argc, char *argv[])
   printf("wall-clock time: %f s\n", musec);
   // apply what we have found in the alpha tree creation to the out image
   // here colors and areas are created etc.
-  SalienceTreeAreaFilter(tree,out,lambda);
-  // SalienceTreeSalienceFilter(tree, out, (double)lambda);
+  // SalienceTreeAreaFilter(tree,out,lambda);
+  SalienceTreeSalienceFilter(tree, out, (double)lambda);
   // SalienceTreeColorMapFilter(tree, out, (double)lambda);
 
   musec = (float)(times(&tstruct) - start) / ((float)tickspersec);
@@ -107,6 +106,5 @@ int main(int argc, char *argv[])
     printf("Filtered image written to '%s'\n", outfname);
 
   free(gval);
-  free(depths);
   return (0);
 } /* main */

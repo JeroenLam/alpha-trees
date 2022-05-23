@@ -75,3 +75,29 @@ double EdgeStrengthY(Pixel *img, int width, int height, int x, int y, SalienceFu
     )
   );
 }
+
+double EdgeStrengthSimpleX(Pixel *img, int width, int height, int x, int y, SalienceFunction Salience)
+{
+  int yminus1 = y - (y > 0);
+  int yplus1 = y + (y < height - 1);
+
+  double salience = Salience(
+    img[width * yminus1 + x],
+    img[width * yplus1 + x]
+  );
+
+  return MainEdgeWeight * salience;
+}
+
+double EdgeStrengthSimpleY(Pixel *img, int width, int height, int x, int y, SalienceFunction Salience)
+{
+  int xminus1 = x - (x > 0);
+  int xplus1 = x + (x < width - 1);
+
+  double salience = Salience(
+    img[width * y + xminus1],
+    img[width * y + xplus1]
+  );
+
+  return MainEdgeWeight * salience;
+}
