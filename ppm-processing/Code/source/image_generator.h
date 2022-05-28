@@ -8,16 +8,9 @@
 #include <sstream>
 #include <cmath>
 #include <vector>
+#include <tuple>
 
 #include "triple.h"
-
-typedef enum InitType {
-    RANDOM,
-    WHITE,
-    BLACK,
-    RGB_SPLIT,
-    RGB_SPECTRUM
-} InitType;
 
 typedef std::vector< std::vector<Triple> > Matrix;
 typedef std::vector<Triple> Row;
@@ -43,7 +36,10 @@ class ImageGenerator
         void apply_grayscale_filter();
         // Graphics operations e.g. drawing
         void fill_with_color(Triple color);
-        void draw_line(Triple color, int x1, int y1, int x2, int y2, int thickness);
+        void draw_point(Triple color, int x, int y, int thickness);
+        void draw_line(Triple color_a, Triple color_b, int x1, int y1, int x2, int y2, int thickness);
+        void draw_rect(Triple color, int x1, int y1, int x2, int y2, int thickness, bool fill);
+        void draw_circle(Triple color, int x_c, int y_c, int r, int thickness, bool fill);
         // IO operations
         void read_image_from_file(std::string fname);
         void save_image_to_file(std::string fname);
@@ -56,7 +52,6 @@ class ImageGenerator
         int RGB_Max;
         
         Triple get_next_rgb(std::ifstream &src);
-        void draw_point(Triple color, int x, int y, int thickness);
         
 };
 

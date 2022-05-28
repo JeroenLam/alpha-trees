@@ -28,8 +28,7 @@ ImageGenerator::ImageGenerator(string fname) {
 
 // ---------------------------- Getters & Setters ----------------------------
 Matrix ImageGenerator::get_image() {
-    vector< vector<Triple> > copy(Image);
-    return copy;
+    return Image;
 }
 
 int ImageGenerator::get_height() {
@@ -145,13 +144,28 @@ void ImageGenerator::fill_with_color(Triple color) {
     }
 }
 
-void ImageGenerator::draw_line(Triple color, int x1, int y1, int x2, int y2, int thickness) {
-    if (x1 < 0 || x1 >= Image_Width ||
-        x2 < 0 || x2 >= Image_Width ||
-        y1 < 0 || y1 >= Image_Height ||
-        y2 < 0 || y2 >= Image_Height
-    ) {
-        cout << "One or both points of the line exceed image dimensions. Aborting line drawing!" << endl;
+void ImageGenerator::draw_point(Triple color, int x, int y, int thickness) {
+    if (thickness > 1)  {
+        for (int i = -(thickness - 1); i < (thickness - 1); i++) {
+            for (int j = -(thickness - 1); j < (thickness - 1); j++) {
+                if (x + i >= 0 && x + i < Image_Width &&
+                    y + j >= 0 && y + j < Image_Height
+                ) {
+                    Image[y + j][x + i] = Color(color);
+                }
+            }
+        }
+    } else if (
+        x >= 0 && x < Image_Width &&
+        y >= 0 && y < Image_Height
+    ){
+        Image[y][x] = Color(color);
+    }
+}
+
+void ImageGenerator::draw_line(Triple color_a, Triple color_b, int x1, int y1, int x2, int y2, int thickness) {
+    if (x1 == x2 and y1 == y2) {
+        draw_point(color_a, x1, y1, thickness);
         return;
     }
     // ensures that (x1,y1) is left of (x2,y2)
@@ -163,24 +177,34 @@ void ImageGenerator::draw_line(Triple color, int x1, int y1, int x2, int y2, int
         y1 = y2;
         y2 = temp;
     }
+    Color color = color_a;
     // drawing straight lines
+    // vertical
+    if (x1 == x2) {
+        Color dc = (color_b - color_a) / abs(y1 - y2);
+        if (y1 > y2) {
+            int temp = y1;
+            y1 = y2;
+            y2 = temp;
+        }
+        int x = x1;
+        for (int y = y1; y <= y2; y++) {
+            draw_point(color, x, y, thickness);
+            color += dc;
+        }
+        return;
+    }
+    Color dc = (color_b - color_a) / abs(x1 - x2);
     // horizontal
     if (y1 == y2) {
         int y = y1;
         for (int x = x1; x <= x2; x++) {
             draw_point(color, x, y, thickness);
+            color += dc;
         }
         return;
     }
-    // vertical
-    if (x1 == x2) {
-        int x = x1;
-        for (int y = y1; y <= y2; y++) {
-            draw_point(color, x, y, thickness);
-        }
-        return;
-    }
-    double slope = (double)(y2 - y1) / (double)(x2 -x1);
+    double slope = (double)(y2 - y1) / (double)(x2 - x1);
     double intersect = y1 - slope * x1;
     // Midpoint line drawing algorithm
     // octant 1
@@ -191,6 +215,7 @@ void ImageGenerator::draw_line(Triple color, int x1, int y1, int x2, int y2, int
         double b = x2 - x1;
         for (int x = x1; x <= x2; x++) {
             draw_point(color, x, y, thickness);
+            color += dc;
             if (d < 0.0) {
                 y++;
                 d = d + a + b;
@@ -208,6 +233,7 @@ void ImageGenerator::draw_line(Triple color, int x1, int y1, int x2, int y2, int
         double a = x1 - x2;
         for (int y = y1; y <= y2; y++) {
             draw_point(color, x, y, thickness);
+            color += dc;
             if (d < 0.0) {
                 x++;
                 d = d + a + b;
@@ -225,6 +251,7 @@ void ImageGenerator::draw_line(Triple color, int x1, int y1, int x2, int y2, int
         double a = x1 - x2;
         for (int y = y1; y >= y2; y--) {
             draw_point(color, x, y, thickness);
+            color += dc;
             if (d < 0.0) {
                 x++;
                 d = d + a + b;
@@ -242,6 +269,7 @@ void ImageGenerator::draw_line(Triple color, int x1, int y1, int x2, int y2, int
         double b = x2 - x1;
         for (int x = x1; x <= x2; x++) {
             draw_point(color, x, y, thickness);
+            color += dc;
             if (d < 0.0) {
                 y--;
                 d = d + a + b;
@@ -253,20 +281,61 @@ void ImageGenerator::draw_line(Triple color, int x1, int y1, int x2, int y2, int
     }
 }
 
-void ImageGenerator::draw_point(Triple color, int x, int y, int thickness) {
-    if (thickness > 1)  {
-        for (int i = -(thickness - 1); i < (thickness - 1); i++) {
-            for (int j = -(thickness - 1); j < (thickness - 1); j++) {
-                if (x + i >= 0 && x + i < Image_Width &&
-                    y + j >= 0 && y + j < Image_Height
-                ) {
-                    Image[y + j][x + i] = Color(color);
-                }
-            }
-        }
-    } else {
-        Image[y][x] = Color(color);
+void ImageGenerator::draw_rect(Triple color, int x1, int y1, int x2, int y2, int thickness, bool fill){
+    // if not filled draw lines between the points
+    if (not fill) {
+        draw_line(color, color, x1, y1, x2, y1, thickness);
+        draw_line(color, color, x2, y1, x2, y2, thickness);
+        draw_line(color, color, x2, y2, x1, y2, thickness);
+        draw_line(color, color, x1, y2, x1, y1, thickness);
+        return;
     }
+    // draw a line from left to right for each row of the rectangle
+    if (y1 > y2) {
+        int temp = y1;
+        y1 = y2;
+        y2 = temp;
+    }
+    for (size_t y = y1; y < y2; y++) {
+        draw_line(color, color, x1, y, x2, y, thickness);
+    }
+}
+
+void ImageGenerator::draw_circle(Triple color, int x_c, int y_c, int r, int thickness, bool fill) {
+    draw_point(color, x_c, y_c + r, thickness);
+    draw_point(color, x_c, y_c - r, thickness);
+    draw_point(color, x_c - r, y_c, thickness);
+    draw_point(color, x_c + r, y_c, thickness);
+    if (fill) {
+        draw_line(color, color, x_c, y_c + r, x_c, y_c - r, 1);
+    }
+    int x = 0;
+    int y = r;
+    int d = 1 - r;
+    while (x < y - 1) {
+        if (d < 0) {
+            d = d + (2 * x) + 3;
+        } else {
+            d = d + (2 * x) - (2 * y) + 5;
+            y--;
+        }
+        x++;
+        draw_point(color, x_c + x, y_c + y, thickness);
+        draw_point(color, x_c - x, y_c + y, thickness);
+        draw_point(color, x_c - x, y_c - y, thickness);
+        draw_point(color, x_c + x, y_c - y, thickness);
+        draw_point(color, x_c + y, y_c + x, thickness);
+        draw_point(color, x_c + y, y_c - x, thickness);
+        draw_point(color, x_c - y, y_c + x, thickness);
+        draw_point(color, x_c - y, y_c - x, thickness);
+        if (fill) {
+            draw_line(color, color, x_c + x, y_c + y, x_c + x, y_c - y, 1);
+            draw_line(color, color, x_c - x, y_c + y, x_c - x, y_c - y, 1);
+            draw_line(color, color, x_c + y, y_c + x, x_c + y, y_c - x, 1);
+            draw_line(color, color, x_c - y, y_c + x, x_c - y, y_c - x, 1);
+        }
+    }
+    
 }
 
 // ---------------------------- IO Operations ----------------------------
