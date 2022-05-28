@@ -14,6 +14,20 @@ bool d_eq(double a, double b) {
     return abs(a - b) < 0.0001;
 }
 
+Triple Barycentric(Point p, Point a, Point b, Point c) {
+    Vector v0 = b - a, v1 = c - a, v2 = p - a;
+    float d00 = v0.dot(v0);
+    float d01 = v0.dot(v1);
+    float d11 = v1.dot(v1);
+    float d20 = v2.dot(v0);
+    float d21 = v2.dot(v1);
+    float denom = d00 * d11 - d01 * d01;
+    float v = (d11 * d20 - d01 * d21) / denom;
+    float w = (d00 * d21 - d01 * d20) / denom;
+    float u = 1.0f - v - w;
+    return Triple(v,w,u);
+}
+
 // ---------------------------- Constructors ----------------------------
 ImageGenerator::ImageGenerator() {
     Image_Height = 0;
@@ -290,6 +304,7 @@ void ImageGenerator::draw_rect(Triple color, int x1, int y1, int x2, int y2, int
         draw_line(color, color, x1, y2, x1, y1, thickness);
         return;
     }
+    thickness = 1;
     // draw a line from left to right for each row of the rectangle
     if (y1 > y2) {
         int temp = y1;
@@ -308,6 +323,7 @@ void ImageGenerator::draw_circle(Triple color, int x_c, int y_c, int r, int thic
     draw_point(color, x_c + r, y_c, thickness);
     if (fill) {
         draw_line(color, color, x_c, y_c + r, x_c, y_c - r, 1);
+        thickness = 1;
     }
     int x = 0;
     int y = r;
@@ -333,6 +349,31 @@ void ImageGenerator::draw_circle(Triple color, int x_c, int y_c, int r, int thic
             draw_line(color, color, x_c - x, y_c + y, x_c - x, y_c - y, 1);
             draw_line(color, color, x_c + y, y_c + x, x_c + y, y_c - x, 1);
             draw_line(color, color, x_c - y, y_c + x, x_c - y, y_c - x, 1);
+        }
+    }
+}
+
+void ImageGenerator::draw_triangle(Triple color, int x1, int y1, int x2, int y2, int x3, int y3, int thickness, bool fill) {
+    draw_line(color, color, x1, y1, x2, y2, thickness);
+    draw_line(color, color, x1, y1, x3, y3, thickness);
+    draw_line(color, color, x3, y3, x2, y2, thickness);
+    if (not fill) return;
+    thickness = 1;
+    int max_x = max(x1, max(x2, x3));
+    int max_y = max(y1, max(y2, y3));
+    int min_x = min(x1, min(x2, x3));
+    int min_y = min(y1, min(y2, y3));
+    for (size_t x = min_x; x <= max_x; x++) {
+        for (size_t y = min_y; y <= max_y; y++) {
+            Triple bar_coor = Barycentric(
+                Point(x, y, 0),
+                Point(x1, y1, 0),
+                Point(x2, y2, 0),
+                Point(x3, y3, 0)
+            );
+            if (bar_coor.x >= 0.0 and bar_coor.y >= 0.0 and bar_coor.z >= 0.0) {
+                draw_point(color, x, y, 1);
+            }
         }
     }
     

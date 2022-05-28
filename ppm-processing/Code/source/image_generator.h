@@ -40,6 +40,7 @@ class ImageGenerator
         void draw_line(Triple color_a, Triple color_b, int x1, int y1, int x2, int y2, int thickness);
         void draw_rect(Triple color, int x1, int y1, int x2, int y2, int thickness, bool fill);
         void draw_circle(Triple color, int x_c, int y_c, int r, int thickness, bool fill);
+        void draw_triangle(Triple color, int x1, int y1, int x2, int y2, int x3, int y3, int thickness, bool fill);
         // IO operations
         void read_image_from_file(std::string fname);
         void save_image_to_file(std::string fname);

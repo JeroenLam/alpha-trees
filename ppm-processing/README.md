@@ -100,7 +100,7 @@ To draw a rectangle onto the image use the following code:
 ```
 image_generator.draw_rect(Triple color, int x1, int y1, int x2, int y2, int thickness, bool fill);
 ```
-The `x1`,`y1`,`x2` and `y2` parameters determine the position of the points defining the two opposing edge points of the rectangle, while the `thickness` parameter determines the width of the edge of the rectangle. The `fill` parameter determines if the rectangle is filled (true) or empty (false).</br>
+The `x1`,`y1`,`x2` and `y2` parameters determine the position of the points defining the two opposing edge points of the rectangle, while the `thickness` parameter determines the width of the edge of the rectangle. The `fill` parameter determines if the rectangle is filled (true) or empty (false). Note that the `thickness` is set to 1 if the `fill` parameter is set to true.</br>
 <img src="../Images/ReadmeImages/rect.png?raw=true" alt="Rectangles" width="400"/>
 
 ### Drawing a Circle
@@ -108,5 +108,13 @@ To draw a circle onto the image use the following code:
 ```
 image_generator.draw_circle(Triple color, int x_c, int y_c, int r, int thickness, bool fill);
 ```
-The `x_c` and `y_c` define the center of the circle while `r` is the circle's radius. The `thickness` parameter determines the width of the edge of the circle. The `fill` parameter determines if the circle is filled (true) or empty (false).</br>
+The `x_c` and `y_c` define the center of the circle while `r` is the circle's radius. The `thickness` parameter determines the width of the edge of the circle. The `fill` parameter determines if the circle is filled (true) or empty (false). Note that the `thickness` is set to 1 if the `fill` parameter is set to true.</br>
 <img src="../Images/ReadmeImages/circle.png?raw=true" alt="Circles" width="400"/>
+
+### Drawing a Circle
+To draw a circle onto the image use the following code:
+```
+image_generator.draw_triangle(Triple color, int x1, int y1, int x2, int y2, int x3, int y3, int thickness, bool fill);
+```
+The `x1`,`y1`,`x2`, `y2`, `x3` and `y3` define the corners of the triangle. The `thickness` parameter determines the width of the edge of the triangle. The `fill` parameter determines if the triangle is filled (true) or empty (false). Note that the `thickness` is set to 1 if the `fill` parameter is set to true.</br>
+<img src="../Images/ReadmeImages/triangles.png?raw=true" alt="Triangles" width="400"/>
