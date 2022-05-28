@@ -47,25 +47,29 @@ for (size_t i = 0; i < image_generator.get_height(); i++) {
 Note that `image_generator.get_image()` returns the actual vector storing the image and the image can be edited via this getter function.
 ## Image Filters
 The following filters can be applied to a loaded _.ppm_ images. The examples have been applied to this original picture:</br>
-![Original](../Images/ReadmeImages/bird.ppm?raw=true)
+<img src="../Images/ReadmeImages/bird.png?raw=true" alt="Original" width="400"/>
+
 ### Color Filter
 This filter adds a color to every pixel in the image functionally applying a color filter to the entire image.
 ```
 image_generator.apply_color_filter(Triple filter);
 ```
-![Color Filter](../Images/ReadmeImages/colored.ppm?raw=true)
+<img src="../Images/ReadmeImages/colored.png?raw=true" alt="Color Filter" width="400"/>
+
 ### Inverted Filter
 This filter inverts the color of every pixel in the image.
 ```
 image_generator.apply_inverted_filter(Triple filter);
 ```
-![Inverted Filter](../Images/ReadmeImages/inverted.ppm?raw=true)
+<img src="../Images/ReadmeImages/inverted.png?raw=true" alt="Inverted Filter" width="400"/>
+
 ### Grayscale Filter
 This filter averages the three color channels of every pixel in the image. This turns the image into a grayscale version of the image.
 ```
 image_generator.apply_grayscale_filter(Triple filter);
 ```
-![Inverted Filter](../Images/ReadmeImages/gray.ppm?raw=true)
+<img src="../Images/ReadmeImages/gray.png?raw=true" alt="Grayscale Filter" width="400"/>
+
 ## Geometry Drawing
 Note that for any geometry providing points outside of the image dimensions will increase computation time as the program will compute points that are not displayed to the user. All geometry displayed however, fits the provided arguments.
 ### Background
@@ -73,32 +77,36 @@ The whole image can be filled with a solid color using the following code:
 ```
 image_generator.fill_with_color(Triple color);
 ```
-![Filled](../Images/ReadmeImages/filled.ppm?raw=true)
+<img src="../Images/ReadmeImages/filled.png?raw=true" alt="Filled" width="400"/>
+
 ### Drawing a Point
 To draw a point onto the image use the following code:
 ```
 image_generator.draw_point(Triple color, int x, int y, int thickness);
 ```
 The `x` and `y` parameters determine the position of the point, while the `thickness` parameter determines the width of the point.</br>
-![Points](../Images/ReadmeImages/point.ppm?raw=true)
+<img src="../Images/ReadmeImages/point.png?raw=true" alt="Points" width="400"/>
+
 ### Drawing a Line
 To draw a line onto the image use the following code:
 ```
 image_generator.draw_line(Triple color_a, Triple color_b, int x1, int y1, int x2, int y2, int thickness);
 ```
 The `x1`,`y1`,`x2` and `y2` parameters determine the position of the points that the line connects, while the `thickness` parameter determines the width of the point. The two colors `color_a` and `color_b` are the colors of the line at positions `(x1,y1)` and `(x2,y2)` respectively. The color of the line is interpolated between the two given colors. For monochrome lines provide the same color for both arguments.</br>
-![Lines](Images/ReadmeImages/lines.ppm?raw=true)
+<img src="../Images/ReadmeImages/lines.png?raw=true" alt="Lines" width="400"/>
+
 ### Drawing a Rectangle
 To draw a rectangle onto the image use the following code:
 ```
 image_generator.draw_rect(Triple color, int x1, int y1, int x2, int y2, int thickness, bool fill);
 ```
 The `x1`,`y1`,`x2` and `y2` parameters determine the position of the points defining the two opposing edge points of the rectangle, while the `thickness` parameter determines the width of the edge of the rectangle. The `fill` parameter determines if the rectangle is filled (true) or empty (false).</br>
-![Rectangles](Images/ReadmeImages/rect.ppm?raw=true)
+<img src="../Images/ReadmeImages/rect.png?raw=true" alt="Rectangles" width="400"/>
+
 ### Drawing a Circle
 To draw a circle onto the image use the following code:
 ```
 image_generator.draw_circle(Triple color, int x_c, int y_c, int r, int thickness, bool fill);
 ```
 The `x_c` and `y_c` define the center of the circle while `r` is the circle's radius. The `thickness` parameter determines the width of the edge of the circle. The `fill` parameter determines if the circle is filled (true) or empty (false).</br>
-![Circles](Images/ReadmeImages/circle.ppm?raw=true)
+<img src="../Images/ReadmeImages/circle.png?raw=true" alt="Circles" width="400"/>
