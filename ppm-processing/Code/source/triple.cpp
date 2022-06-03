@@ -5,7 +5,7 @@
  * @author Rijksuniversiteit Groningen
  * 
  * Disclaimer:
- * This class has been provided to me by the RUG in the course COmputer Graphics.
+ * This class has been provided to me by the RUG in the course Computer Graphics.
  * I was allowed to use this class for private projects.
  * 
  */

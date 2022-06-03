@@ -7,34 +7,52 @@
 #include <cstdlib>
 #include <sstream>
 #include <cmath>
+#include <vector>
+#include <tuple>
 
 #include "triple.h"
 
-typedef enum InitType {
-    RANDOM,
-    WHITE,
-    BLACK,
-    RGB_SPLIT,
-    RGB_SPECTRUM
-} InitType;
+typedef std::vector< std::vector<Triple> > Matrix;
+typedef std::vector<Triple> Row;
 
 class ImageGenerator
 {
     public:
+        // Constructors
         ImageGenerator();
-
-        void generate_ppm_image(std::string fname, InitType mode, int width, int height);
-        void generate_ppm_horizontal_split(std::string fname, int split, int width, int height, int transition, Triple color1, Triple color2);
-        void apply_color_filter(std::string src, std::string dest, Triple filter);
-        void apply_inverted_filter(std::string src, std::string dest);
-        void apply_grayscale_filter(std::string src, std::string dest);
+        ImageGenerator(std::string fname);
+        // Getter Functions
+        Matrix get_image();
+        int get_height();
+        int get_width();
+        int get_rgb_max();
+        std::string get_type();
+        // util
+        void print_image();
+        void generate_ppm_image(Triple color, int width, int height);
+        // Image Filter
+        void apply_color_filter(Triple filter);
+        void apply_inverted_filter();
+        void apply_grayscale_filter();
+        // Graphics operations e.g. drawing
+        void fill_with_color(Triple color);
+        void draw_point(Triple color, int x, int y, int thickness);
+        void draw_line(Triple color_a, Triple color_b, int x1, int y1, int x2, int y2, int thickness);
+        void draw_rect(Triple color, int x1, int y1, int x2, int y2, int thickness, bool fill);
+        void draw_circle(Triple color, int x_c, int y_c, int r, int thickness, bool fill);
+        void draw_triangle(Triple color, int x1, int y1, int x2, int y2, int x3, int y3, int thickness, bool fill);
+        // IO operations
+        void read_image_from_file(std::string fname);
+        void save_image_to_file(std::string fname);
     
     private:
-        void copy_ppm_header(std::ifstream &src, std::ofstream &dest);
+        Matrix Image;
+        std::string PPM_Type;
+        int Image_Width;
+        int Image_Height;
+        int RGB_Max;
         
         Triple get_next_rgb(std::ifstream &src);
-        Triple rgb_split_color(int x, int y, int slope, int height);
-        Triple rgb_spectrum_color(int x, int y, int z);
         
 };
 

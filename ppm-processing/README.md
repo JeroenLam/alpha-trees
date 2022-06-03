@@ -1,8 +1,10 @@
 # PPM Processor
-
+This Program can be used to load and save _.ppm_ images. A multiple of image filters can be applied to the images. Furthermore the program can create _.ppm_ images from scratch and allow the user to draw a selection of geometry onto the image. The user can draw points, lines, rectangles and circles onto the image.
+## Quick Start
 To run make sure that cmake is installed on the machine.
 </br>
 In _ppm-processing/_
+
 ```
 mkdir build
 cd build
@@ -11,4 +13,108 @@ make
 ./image_processor
 ```
 
-Use the `-u` flag to enter user mode.
+# How to use
+## Load and Save Images
+To create an image use the `ImageGenerator` class. The class has two constructors:
+```
+// creates an empty image
+ImageGenerator image_generator = ImageGenerator();
+// loads an image from a ppm file given the path
+ImageGenerator image_generator = ImageGenerator(std::string <path_to_file>);
+```
+Optionally a _.ppm_ image can be loaded into the image generator using the following code:
+```
+image_generator.read_image_from_file(std::string <path_to_file>);
+```
+To save the edited image to a _.ppm_ file use the following code:
+```
+image_generator.save_image_to_file(std::string <path_to_file>);
+```
+## Data Representation
+The images are stored as a two dimensional `std::vector< std::vector<Triple> >` where a `Triple` is a data structure storing three integer values. These are used to represent the color channel values of each of the pixels in the image. As we are using vectors to store the pixels we can access the pixels of an image via the following code:
+```
+Triple c = image_generator.get_image()[y][x];
+```
+In this example `c` is the pixel in row y and column x, where row 0 is at the bottom of the image and column 0 is at the left of the image.</br>
+To loop through every pixel of the image use the following code:
+```
+for (size_t i = 0; i < image_generator.get_height(); i++) {
+    for (size_t j = 0; j < image_generator.get_width(); j++) { 
+        Triple pix = image_generator.get_image()[i][j];
+    }
+}
+```
+Note that `image_generator.get_image()` returns the actual vector storing the image and the image can be edited via this getter function.
+## Image Filters
+The following filters can be applied to a loaded _.ppm_ images. The examples have been applied to this original picture:</br>
+<img src="../Images/ReadmeImages/bird.png?raw=true" alt="Original" width="400"/>
+
+### Color Filter
+This filter adds a color to every pixel in the image functionally applying a color filter to the entire image.
+```
+image_generator.apply_color_filter(Triple filter);
+```
+<img src="../Images/ReadmeImages/colored.png?raw=true" alt="Color Filter" width="400"/>
+
+### Inverted Filter
+This filter inverts the color of every pixel in the image.
+```
+image_generator.apply_inverted_filter(Triple filter);
+```
+<img src="../Images/ReadmeImages/inverted.png?raw=true" alt="Inverted Filter" width="400"/>
+
+### Grayscale Filter
+This filter averages the three color channels of every pixel in the image. This turns the image into a grayscale version of the image.
+```
+image_generator.apply_grayscale_filter(Triple filter);
+```
+<img src="../Images/ReadmeImages/gray.png?raw=true" alt="Grayscale Filter" width="400"/>
+
+## Geometry Drawing
+Note that for any geometry providing points outside of the image dimensions will increase computation time as the program will compute points that are not displayed to the user. All geometry displayed however, fits the provided arguments.
+### Background
+The whole image can be filled with a solid color using the following code:
+```
+image_generator.fill_with_color(Triple color);
+```
+<img src="../Images/ReadmeImages/filled.png?raw=true" alt="Filled" width="400"/>
+
+### Drawing a Point
+To draw a point onto the image use the following code:
+```
+image_generator.draw_point(Triple color, int x, int y, int thickness);
+```
+The `x` and `y` parameters determine the position of the point, while the `thickness` parameter determines the width of the point.</br>
+<img src="../Images/ReadmeImages/point.png?raw=true" alt="Points" width="400"/>
+
+### Drawing a Line
+To draw a line onto the image use the following code:
+```
+image_generator.draw_line(Triple color_a, Triple color_b, int x1, int y1, int x2, int y2, int thickness);
+```
+The `x1`,`y1`,`x2` and `y2` parameters determine the position of the points that the line connects, while the `thickness` parameter determines the width of the point. The two colors `color_a` and `color_b` are the colors of the line at positions `(x1,y1)` and `(x2,y2)` respectively. The color of the line is interpolated between the two given colors. For monochrome lines provide the same color for both arguments.</br>
+<img src="../Images/ReadmeImages/lines.png?raw=true" alt="Lines" width="400"/>
+
+### Drawing a Rectangle
+To draw a rectangle onto the image use the following code:
+```
+image_generator.draw_rect(Triple color, int x1, int y1, int x2, int y2, int thickness, bool fill);
+```
+The `x1`,`y1`,`x2` and `y2` parameters determine the position of the points defining the two opposing edge points of the rectangle, while the `thickness` parameter determines the width of the edge of the rectangle. The `fill` parameter determines if the rectangle is filled (true) or empty (false). Note that the `thickness` is set to 1 if the `fill` parameter is set to true.</br>
+<img src="../Images/ReadmeImages/rect.png?raw=true" alt="Rectangles" width="400"/>
+
+### Drawing a Circle
+To draw a circle onto the image use the following code:
+```
+image_generator.draw_circle(Triple color, int x_c, int y_c, int r, int thickness, bool fill);
+```
+The `x_c` and `y_c` define the center of the circle while `r` is the circle's radius. The `thickness` parameter determines the width of the edge of the circle. The `fill` parameter determines if the circle is filled (true) or empty (false). Note that the `thickness` is set to 1 if the `fill` parameter is set to true.</br>
+<img src="../Images/ReadmeImages/circle.png?raw=true" alt="Circles" width="400"/>
+
+### Drawing a Circle
+To draw a circle onto the image use the following code:
+```
+image_generator.draw_triangle(Triple color, int x1, int y1, int x2, int y2, int x3, int y3, int thickness, bool fill);
+```
+The `x1`,`y1`,`x2`, `y2`, `x3` and `y3` define the corners of the triangle. The `thickness` parameter determines the width of the edge of the triangle. The `fill` parameter determines if the triangle is filled (true) or empty (false). Note that the `thickness` is set to 1 if the `fill` parameter is set to true.</br>
+<img src="../Images/ReadmeImages/triangles.png?raw=true" alt="Triangles" width="400"/>
