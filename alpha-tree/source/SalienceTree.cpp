@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <opencv2/opencv.hpp>
+
 /**
  * @brief Create a Salience Tree object
  * 
@@ -12,10 +14,10 @@
  */
 SalienceTree *CreateSalienceTree(int imgsize)
 {
-  SalienceTree *tree = malloc(sizeof(SalienceTree));
+  SalienceTree *tree = (SalienceTree*) malloc(sizeof(SalienceTree));
   tree->maxSize = 2 * imgsize; /* potentially twice the number of nodes as pixels exist*/
   tree->curSize = imgsize;     /* first imgsize taken up by pixels */
-  tree->node = malloc((tree->maxSize) * sizeof(SalienceNode));
+  tree->node = (SalienceNode*) malloc((tree->maxSize) * sizeof(SalienceNode));
   return tree;
 }
 
@@ -23,7 +25,7 @@ SalienceTree *MakeSalienceTree(Pixel *img, int width, int height, double lambdam
 {
   int imgsize = width * height;
   EdgeQueue *queue = EdgeQueueCreate((CONNECTIVITY / 2) * imgsize);
-  int *root = malloc(imgsize * 2 * sizeof(int));
+  int *root = (int*) malloc(imgsize * 2 * sizeof(int));
   SalienceTree *tree;
   tree = CreateSalienceTree(imgsize);
   assert(tree != NULL);
