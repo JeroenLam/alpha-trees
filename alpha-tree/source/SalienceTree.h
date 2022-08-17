@@ -1,10 +1,22 @@
 #ifndef SALIENCE_TREE_H
 #define SALIENCE_TREE_H
 
+#include <iostream>
+
 #include "../util/common.h"
 #include "EdgeQueue.h"
+#include "DistanceFunction.h"
+#include <opencv2/opencv.hpp>
 
-#define Par(tree, p) LevelRoot(tree, tree->node[p].parent)
+#define Par(tree, p) LevelRoot(tree, tree->nodes[p].parent)
+
+using cv::Mat;
+
+class PointOutOfBoundsException : std::exception {
+	public:
+		std::string what (){ return "Point out of bounds"; }
+
+};
 
 typedef struct SalienceNode
 {
@@ -22,24 +34,15 @@ typedef struct SalienceTree
 {
   int maxSize;
   int curSize;
-  SalienceNode *node;
+  SalienceNode *nodes;
 } SalienceTree;
 
+enum Connectivity {CN_4, CN_8};
+double const LEAF_ALPHA = -1;
 
-SalienceTree *CreateSalienceTree(int imgsize);
-SalienceTree *MakeSalienceTree(Pixel *img, int width, int height, double lambdamin);
+
+SalienceTree *MakeSalienceTree(Mat img, AbstractDistanceFunction *delta, Connectivity cn);
 void DeleteTree(SalienceTree *tree);
-int NewSalienceNode(SalienceTree *tree, int *root, double alpha);
-int FindRoot(int *root, int p);
-int FindRoot1(SalienceTree *tree, int *root, int p);
-int LevelRoot(SalienceTree *tree, int p);
 int Depth(SalienceTree *tree, int p);
-boolean IsLevelRoot(SalienceTree *tree, int i);
-void MakeSet(SalienceTree *tree, int *root, Pixel *gval, int p);
-void GetAncestors(SalienceTree *tree, int *root, int *p, int *q);
-void Union(SalienceTree *tree, int *root, int p, int q);
-void Union2(SalienceTree *tree, int *root, int p, int q);
-void Phase1(SalienceTree *tree, EdgeQueue *queue, int *root, Pixel *img, int width, int height, double lambdamin);
-void Phase2(SalienceTree *tree, EdgeQueue *queue, int *root, Pixel *img, int width, int height);
 
 #endif

@@ -15,9 +15,7 @@
 
 #include <common.h>
 #include <PPMImageReadWrite.h>
-#include <EdgeDetection.h>
 #include <DistanceMeasures.h>
-#include <TreeFilter.h>
 #include <EdgeQueue.h>
 #include <SalienceTree.h>
 
@@ -30,22 +28,7 @@ double OrthogonalEdgeWeight = 1.0;
 double SalienceRange[2] = {0, 10000};
 
 // variables
-int lambda;
-double omegafactor = 200000;
-
-// input and output images as arrays of pixel
-Pixel *gval = NULL;
-Pixel *out = NULL;
-
-// Set the function you want to use to compute the alpha between two pixels here
-SalienceFunction salienceFunction = &WeightedEuclideanDistance;
-// Set the functions you want to use to compute edge strength here
-EdgeStrengthFunction edgeStrengthX = &EdgeStrengthX;
-EdgeStrengthFunction edgeStrengthY = &EdgeStrengthY;
-// diagonals for 8-Connectivity
-EdgeStrengthFunction edgeStrengthTL_BR = NULL;
-EdgeStrengthFunction edgeStrengthBL_TR = NULL;
-boolean normalize = false;
+//double omegafactor = 200000;
 
 int main(int argc, char *argv[])
 {
@@ -69,38 +52,42 @@ int main(int argc, char *argv[])
 
 	imgfname = argv[1];
 
-	lambda = atoi(argv[2]);
+	int lambda = atoi(argv[2]);
 	if (argc > 3)
-	omegafactor = atof(argv[3]);
+	double omegafactor = atof(argv[3]);
 
 	if (argc > 4)
 	outfname = argv[4];
 
 	// Read the input image
-	//Mat image = cv::imread(imgfname, 1);
-	if (!ImagePPMRead(imgfname, &width, &height))
+	Mat image = cv::imread(imgfname, 1);
+	if (image.empty()){
+		std::cerr << "Failed to read input image!\n";
 		return (-1);
-	size = width*height;
+	}
+	size = image.cols*image.rows;
 
 	// allocate space for the pixel array that is the output image
-	//out = Mat::zeros(image.rows, image.cols, CV_64F);
-	out = (Pixel*) malloc(size * sizeof(Pixel));
+	Mat out = Mat::zeros(image.rows, image.cols, CV_64F);
 
 	cout << "Filtering image '"<< imgfname << "' using attribute area with lambda=" << lambda << "\n";
-	cout << "Image: Width=" << width << "Height=" << height << "\n";
+	cout << "Image: Width=" << image.cols << "Height=" << image.rows << "\n";
 
 	printf("Data read, start filtering.\n");
 	start = times(&tstruct);
 	// create the actual alpha tree
-	tree = MakeSalienceTree(gval, width, height, (double)lambda);
+	DistanceFunction<uint8_t, 3> delta(image, &minkowski<3,2>);
+	tree = MakeSalienceTree(image, &delta, CN_4);
+	//tree = MakeSalienceTree(gval, width, height, (double)lambda);
 
 	musec = (float)(times(&tstruct) - start) / ((float)tickspersec);
 
 	printf("wall-clock time: %f s\n", musec);
+	return 0;
 	// apply what we have found in the alpha tree creation to the out image
 	// here colors and areas are created etc.
 	// SalienceTreeAreaFilter(tree,out,lambda);
-	SalienceTreeSalienceFilter(tree, out, (double)lambda);
+	//SalienceTreeSalienceFilter(tree, out, (double)lambda);
 	// SalienceTreeColorMapFilter(tree, out, (double)lambda);
 
 	musec = (float)(times(&tstruct) - start) / ((float)tickspersec);
@@ -108,10 +95,8 @@ int main(int argc, char *argv[])
 	printf("wall-clock time: %f s\n", musec);
 
 	r = ImagePPMBinWrite(outfname, width, height);
-	free(out);
 	if (r)
 	cout << "Filtered image written to '" << outfname << "'\n";
 
-	free(gval);
 	return (0);
 } /* main */

@@ -11,8 +11,8 @@
 #define BOTTOM (-1)
 #define false 0
 #define true 1
-#define MIN(a, b) ((a <= b) ? (a) : (b))
-#define MAX(a, b) ((a >= b) ? (a) : (b))
+#define MIN(a,b)  ((a) > (b) ? (b) : (a))
+#define MAX(a,b)  ((a) < (b) ? (b) : (a))
 
 #define CONNECTIVITY 4
 
