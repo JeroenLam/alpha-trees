@@ -11,6 +11,7 @@
 #define Par(tree, p) LevelRoot(tree, tree->nodes[p].parent)
 
 using cv::Mat;
+using cv::Point;
 
 class PointOutOfBoundsException : std::exception {
 	public:
@@ -22,12 +23,7 @@ typedef struct SalienceNode
 {
   int parent;
   int area;
-  boolean filtered; /* indicates whether or not the filtered value is OK */
-  Pixel outval;  /* output value after filtering */
   double alpha;  /* alpha of flat zone */
-  double sumPix[3];
-  Pixel minPix;
-  Pixel maxPix;
 } SalienceNode;
 
 typedef struct SalienceTree
@@ -37,12 +33,13 @@ typedef struct SalienceTree
   SalienceNode *nodes;
 } SalienceTree;
 
-enum Connectivity {CN_4, CN_8};
+enum Connectivity {CN_4 = 4, CN_8 = 8};
 double const LEAF_ALPHA = -1;
 
 
 SalienceTree *MakeSalienceTree(Mat img, AbstractDistanceFunction *delta, Connectivity cn);
 void DeleteTree(SalienceTree *tree);
+Point getPoint(int index, Mat image);
 int Depth(SalienceTree *tree, int p);
 
 #endif

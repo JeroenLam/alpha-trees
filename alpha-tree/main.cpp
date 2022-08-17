@@ -18,6 +18,7 @@
 #include <DistanceMeasures.h>
 #include <EdgeQueue.h>
 #include <SalienceTree.h>
+#include <TreeFilter.h>
 
 using namespace std;
 using cv::Mat;
@@ -67,9 +68,6 @@ int main(int argc, char *argv[])
 	}
 	size = image.cols*image.rows;
 
-	// allocate space for the pixel array that is the output image
-	Mat out = Mat::zeros(image.rows, image.cols, CV_64F);
-
 	cout << "Filtering image '"<< imgfname << "' using attribute area with lambda=" << lambda << "\n";
 	cout << "Image: Width=" << image.cols << "Height=" << image.rows << "\n";
 
@@ -79,11 +77,12 @@ int main(int argc, char *argv[])
 	DistanceFunction<uint8_t, 3> delta(image, &minkowski<3,2>);
 	tree = MakeSalienceTree(image, &delta, CN_4);
 	//tree = MakeSalienceTree(gval, width, height, (double)lambda);
+	AverageFilter<uint8_t, 3> filter(tree, image);
+	Mat out = filter.filter(lambda);
 
 	musec = (float)(times(&tstruct) - start) / ((float)tickspersec);
 
 	printf("wall-clock time: %f s\n", musec);
-	return 0;
 	// apply what we have found in the alpha tree creation to the out image
 	// here colors and areas are created etc.
 	// SalienceTreeAreaFilter(tree,out,lambda);
@@ -94,8 +93,10 @@ int main(int argc, char *argv[])
 
 	printf("wall-clock time: %f s\n", musec);
 
-	r = ImagePPMBinWrite(outfname, width, height);
-	if (r)
+	bool success = cv::imwrite(outfname, out);
+	if(!success)
+		cerr << "Could not write image to " << outfname << "\n"; 
+
 	cout << "Filtered image written to '" << outfname << "'\n";
 
 	return (0);

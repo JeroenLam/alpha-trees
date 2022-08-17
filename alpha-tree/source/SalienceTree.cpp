@@ -248,7 +248,7 @@ SalienceTree *MakeSalienceTree(Mat img, AbstractDistanceFunction *delta, Connect
 	int imgsize = img.cols*img.rows;
 
 	// Priority queue holding edges between adjacent pixels, minimum edge weight has highest priority
-	EdgeQueue *queue = EdgeQueueCreate((CONNECTIVITY / 2) * imgsize);
+	EdgeQueue *queue = EdgeQueueCreate((cn / 2) * imgsize);
 
 	// Array representing the sets for the Union-Find algorithm. 
 	// Used to quickly look up the root node of the sub alpha tree a certain node is in.

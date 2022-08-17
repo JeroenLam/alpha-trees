@@ -1,5 +1,6 @@
 #ifndef EDGE_QUEUE_H
 #define EDGE_QUEUE_H
+#include <iostream>
 
 // Edge representation where p, q are indices of two pixels and alpha is the alpha value between them
 typedef struct Edge
@@ -17,6 +18,12 @@ typedef struct
 
 #define EdgeQueueFront(queue) (queue->queue + 1)
 #define IsEmpty(queue) ((queue->size) == 0)
+
+class QueueOverflowException : std::exception {
+	public:
+		std::string what (){ return "Too many elements pushed into queue"; }
+
+};
 
 EdgeQueue *EdgeQueueCreate(long maxsize);
 void EdgeQueueDelete(EdgeQueue *oldqueue);

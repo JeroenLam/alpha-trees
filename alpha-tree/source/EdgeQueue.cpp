@@ -85,6 +85,8 @@ void EdgeQueuePush(EdgeQueue *queue, int p, int q, double alpha)
   // increase the amount of elements in the queue and update where
   // the queue points to
   queue->size++;
+  if(queue->size > queue->maxsize)
+	  throw QueueOverflowException(); 
   current = queue->size;
 
   // while we do not look at the root and the parents alpha is higer than the given alpha
