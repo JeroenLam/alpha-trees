@@ -2,16 +2,35 @@
 #define SALIENCE_TREE_H
 
 #include <iostream>
-
-#include "../util/common.h"
-#include "EdgeQueue.h"
-#include "DistanceFunction.h"
+#include <queue>
+#include <vector>
 #include <opencv2/opencv.hpp>
 
-#define Par(tree, p) LevelRoot(tree, tree->nodes[p].parent)
+#include "../util/common.h"
+#include "DistanceFunction.h"
 
 using cv::Mat;
 using cv::Point;
+using std::priority_queue;
+using std::vector;
+
+typedef struct Edge
+{
+	int p, q;
+	double alpha;
+
+	friend bool operator< (Edge const& lhs, Edge const& rhs){
+		return lhs.alpha >= rhs.alpha;
+	}
+} Edge;
+
+
+class EdgeQueue : public priority_queue<Edge, vector<Edge>>{
+	public:
+		EdgeQueue(int size){
+			this->c.reserve(size);
+		}
+};
 
 class PointOutOfBoundsException : std::exception {
 	public:

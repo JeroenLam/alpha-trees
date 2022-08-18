@@ -8,6 +8,7 @@
 
 using cv::Point;
 using cv::Mat;
+using std::priority_queue;
 
 // i(x,y) = y*width + x
 // x,y (i) = i % width, i//width
@@ -26,7 +27,7 @@ int getIndex(Point p, Mat img){
 	return p.y*img.cols + p.x;
 }
 
-void makeEdge(Mat img, Point a, Point b, EdgeQueue *edgeQueue, AbstractDistanceFunction *delta){
+void makeEdge(Mat img, Point a, Point b, EdgeQueue& queue, AbstractDistanceFunction *delta){
 	int a_index, b_index;
 	try{
 		a_index = getIndex(a, img);
@@ -34,20 +35,21 @@ void makeEdge(Mat img, Point a, Point b, EdgeQueue *edgeQueue, AbstractDistanceF
 	} catch(PointOutOfBoundsException e){
 		return;
 	}
-
-	EdgeQueuePush(edgeQueue, a_index, b_index, delta->getAlpha(a, b));
+	
+	Edge e = {.p = a_index, .q = b_index, .alpha = delta->getAlpha(a,b)}; 
+	queue.push(e);
 }
 
-void makeEdges(Mat img, Connectivity cn, EdgeQueue *edgeQueue, AbstractDistanceFunction *delta){
+void makeEdges(Mat img, Connectivity cn, EdgeQueue& queue, AbstractDistanceFunction *delta){
 	for(int x = 0; x < img.cols; x++){
 		for(int y = 0; y < img.rows; y++){
 			Point p = Point(x,y);
-			makeEdge(img, p, Point(x+1,y), edgeQueue, delta);
-			makeEdge(img, p, Point(x,y+1), edgeQueue, delta);
+			makeEdge(img, p, Point(x+1,y), queue, delta);
+			makeEdge(img, p, Point(x,y+1), queue, delta);
 
 			if (cn == CN_8){
-				makeEdge(img, p, Point(x-1, y+1), edgeQueue, delta);
-				makeEdge(img, p, Point(x+1, y+1), edgeQueue, delta);
+				makeEdge(img, p, Point(x-1, y+1), queue, delta);
+				makeEdge(img, p, Point(x+1, y+1), queue, delta);
 			}
 		}
 	}
@@ -81,16 +83,15 @@ void DeleteTree(SalienceTree *tree)
  * @param alpha The nodes alpha level
  * @return int Index of the new node
  */
-int NewSalienceNode(SalienceTree *tree, int *sets, double alpha)
-{
-  // node is the next free spot in the tree (pointer arithmetics)
-  SalienceNode *nodes = tree->nodes + tree->curSize;
-  int result = tree->curSize;
-  tree->curSize++;
-  nodes->alpha = alpha;
-  nodes->parent = BOTTOM;
-  sets[result] = BOTTOM;
-  return result;
+int makeSalienceNode(SalienceTree *tree, int *sets, double alpha){
+	// node is the next free spot in the tree (pointer arithmetics)
+	SalienceNode *nodes = tree->nodes + tree->curSize;
+	int result = tree->curSize;
+	tree->curSize++;
+	nodes->alpha = alpha;
+	nodes->parent = BOTTOM;
+	sets[result] = BOTTOM;
+	return result;
 }
 
 /**
@@ -99,22 +100,11 @@ int NewSalienceNode(SalienceTree *tree, int *sets, double alpha)
  * @param sets The array containing the set graph
  * @param p the index in the sets array of the node whose set's root needs to be found
  */
-int FindRoot(int *sets, int p)
-{
-  int r = p, i, j;
-
-  while (sets[r] != BOTTOM)
-  {
-    r = sets[r];
-  }
-  i = p;
-  while (i != r)
-  {
-    j = sets[i];
-    sets[i] = r;
-    i = j;
-  }
-  return r;
+int findRoot(int *sets, int p){
+	if(sets[p] == BOTTOM){return p;}
+	int root = findRoot(sets, sets[p]);
+	sets[p] = root;
+	return root;
 }
 
 /**
@@ -127,13 +117,10 @@ int FindRoot(int *sets, int p)
  * @return true if the node is at root level
  * @return false if the node is not at root level
  */
-boolean IsLevelRoot(SalienceTree *tree, int i)
-{
-  int parent = tree->nodes[i].parent;
-
-  if (parent == BOTTOM)
-    return true;
-  return (tree->nodes[i].alpha != tree->nodes[parent].alpha);
+bool isLevelRoot(SalienceTree *tree, int i){
+	int parent = tree->nodes[i].parent;
+	if (parent == BOTTOM){return true;}
+	return (tree->nodes[i].alpha != tree->nodes[parent].alpha);
 }
 
 /**
@@ -143,117 +130,56 @@ boolean IsLevelRoot(SalienceTree *tree, int i)
  * @param p Node to find the level root of
  * @return int Index of the level root
  */
-int LevelRoot(SalienceTree *tree, int p)
-{
-  int r = p, i, j;
-
-  while (!IsLevelRoot(tree, r))
-  {
-    r = tree->nodes[r].parent;
-  }
-  i = p;
-
-  while (i != r)
-  {
-    j = tree->nodes[i].parent;
-    tree->nodes[i].parent = r;
-    i = j;
-  }
-  return r;
+int findLevelRoot(SalienceTree *tree, int p){
+	if(isLevelRoot(tree, p)){return p;}
+	int root = findLevelRoot(tree, tree->nodes[p].parent);
+	tree->nodes[p].parent = root;
+	return root;
 }
 
-void GetAncestors(SalienceTree *tree, int *sets, int *p, int *q)
-{
-  int temp;
-  // get root of each pixel and ensure correct order
-  *p = LevelRoot(tree, *p);
-  *q = LevelRoot(tree, *q);
-  if (*p < *q)
-  {
-    temp = *p;
-    *p = *q;
-    *q = temp;
-  }
-  // while both nodes are not the same and are not the root of the tree
-  while ((*p != *q) && (sets[*p] != BOTTOM) && (sets[*q] != BOTTOM))
-  {
-    *q = sets[*q];
-    if (*p < *q)
-    {
-      temp = *p;
-      *p = *q;
-      *q = temp;
-    }
-  }
-  // if either node is the tree root find the root of the other
-  if (sets[*p] == BOTTOM)
-  {
-    *q = FindRoot(sets, *q);
-  }
-  else if (sets[*q] == BOTTOM)
-  {
-    *p = FindRoot(sets, *p);
-  }
+void mergeNodes(SalienceTree *tree, int *sets, int p, int q){
+	tree->nodes[q].parent = p;
+	sets[q] = p;
+	tree->nodes[p].area += tree->nodes[q].area;
 }
 
-void Union(SalienceTree *tree, int *sets, int p, int q)
+void processEdges(SalienceTree *tree, EdgeQueue& queue, int *sets)
 {
-  tree->nodes[q].parent = p;
-  sets[q] = p;
-  tree->nodes[p].area += tree->nodes[q].area;
-}
-
-void processEdges(SalienceTree *tree, EdgeQueue *queue, int *sets)
-{
-	Edge *currentEdge;
-	int v1, v2, temp, r;
-	double alpha12;
-	while (!IsEmpty(queue))
-	{
+	while (!queue.empty()){
 		// deque the current edge and temporarily store its values
-		currentEdge = EdgeQueueFront(queue);
-		v1 = currentEdge->p;
-		v2 = currentEdge->q;
-		GetAncestors(tree, sets, &v1, &v2);
-		alpha12 = currentEdge->alpha;
+		Edge edge = queue.top();
+		queue.pop();
+		int root1 = findRoot(sets, edge.p);
+		int root2 = findRoot(sets, edge.q);
 
-		EdgeQueuePop(queue);
-		if (v1 != v2)
-		{
-			if (v1 < v2)
-			{
-				temp = v1;
-				v1 = v2;
-				v2 = temp;
-			}
-			if (tree->nodes[v1].alpha < alpha12)
-			{
-				// if the higher node has a lower alpha level than the edge
-				// we combine the two nodes in a new salience node
-				r = NewSalienceNode(tree, sets, alpha12);
-				Union(tree, sets, r, v1);
-				Union(tree, sets, r, v2);
-			}
-			else
-			{
-				// otherwise we add the lower node to the higher node
-				Union(tree, sets, v1, v2);
-			}
+		if (root1 == root2){continue;}
+		if (root1 < root2){std::swap(root1, root2);}
+
+		if (tree->nodes[root1].alpha < edge.alpha){
+			// if the higher node has a lower alpha level than the edge
+			// we combine the two nodes in a new salience node
+			int new_root = makeSalienceNode(tree, sets, edge.alpha);
+			mergeNodes(tree, sets, new_root, root1);
+			mergeNodes(tree, sets, new_root, root2);
+		}
+		else{
+			// otherwise we add the lower node to the higher node
+			mergeNodes(tree, sets, root1, root2);
 		}
 	}
 }
 
-void finalizeTree(SalienceTree *tree, int imgsize){
+int pruneTree(SalienceTree *tree, int imgsize){
 	bool *keepNode = (bool*) calloc(tree->curSize, sizeof(bool));
 	bool *freeIndex = (bool*) calloc(tree->curSize, sizeof(bool));
 	int *nodeMap = (int*) malloc(tree->curSize*sizeof(int));
-	int pi = -1;
+	int nextFree = -1;
 	int pruneAmount = 0;
 
 	for(int i = 0; i < tree->curSize; i++){
 		if(i < imgsize){keepNode[i] = true;} //Keep all leaf nodes
 		else if(!keepNode[i]){ //Node has not been claimed as parent
-			if(pi < 0){pi = i;}
+			if(nextFree < 0){nextFree = i;}
 			freeIndex[i] = true;
 			pruneAmount++;
 			continue;
@@ -261,24 +187,26 @@ void finalizeTree(SalienceTree *tree, int imgsize){
 
 		int parent = tree->nodes[i].parent;
 		if (parent != BOTTOM){
-			int levelParent = LevelRoot(tree, parent);
+			int levelParent = findLevelRoot(tree, parent);
 			tree->nodes[i].parent = levelParent;
 			keepNode[levelParent] = true;
 		}
 
 		nodeMap[i] = i;
-		if(pi >= 0){
-			nodeMap[i] = pi;
-			freeIndex[pi] = false;
+		if(nextFree >= 0){
+			nodeMap[i] = nextFree;
+			freeIndex[nextFree] = false;
 			freeIndex[i] = true;
-			for(; !freeIndex[pi] && pi < i; pi++){};
+			for(; !freeIndex[nextFree] && nextFree < i; nextFree++){};
 		}
 	}
 
-	if(pi < 0){
+	free(freeIndex);
+
+	if(nextFree < 0){
 		free(keepNode);
 		free(nodeMap);
-		return;
+		return 0;
 	}
 
 	SalienceNode *prunedNodes = (SalienceNode*) malloc((tree->curSize - pruneAmount)*sizeof(SalienceNode));
@@ -295,14 +223,18 @@ void finalizeTree(SalienceTree *tree, int imgsize){
 
 	free(keepNode);
 	free(nodeMap);
+	
+	return pruneAmount;
 }
+
+
 
 SalienceTree *MakeSalienceTree(Mat img, AbstractDistanceFunction *delta, Connectivity cn)
 {
 	int imgsize = img.cols*img.rows;
 
 	// Priority queue holding edges between adjacent pixels, minimum edge weight has highest priority
-	EdgeQueue *queue = EdgeQueueCreate((cn / 2) * imgsize);
+	EdgeQueue queue((cn/2)*imgsize);
 
 	// Array representing the sets for the Union-Find algorithm. 
 	// Used to quickly look up the root node of the sub alpha tree a certain node is in.
@@ -326,10 +258,10 @@ SalienceTree *MakeSalienceTree(Mat img, AbstractDistanceFunction *delta, Connect
 	makeLeafNodes(tree, sets, imgsize);
 	cout << "Building alpha tree\n";
 	processEdges(tree, queue, sets);
-	cout << "Cleaning alpha tree\n";
-	finalizeTree(tree, imgsize);
+	cout << "Pruning alpha tree\n";
+	int nodesPruned = pruneTree(tree, imgsize);
+	cout << nodesPruned << " nodes pruned\n";
 
-	EdgeQueueDelete(queue);
 	free(sets);
 	return tree;
 }

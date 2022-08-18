@@ -15,7 +15,6 @@
 
 #include <common.h>
 #include <DistanceMeasures.h>
-#include <EdgeQueue.h>
 #include <SalienceTree.h>
 #include <TreeFilter.h>
 
