@@ -14,7 +14,6 @@
 #include <opencv2/opencv.hpp>
 
 #include <common.h>
-#include <PPMImageReadWrite.h>
 #include <DistanceMeasures.h>
 #include <EdgeQueue.h>
 #include <SalienceTree.h>
@@ -74,11 +73,13 @@ int main(int argc, char *argv[])
 	printf("Data read, start filtering.\n");
 	start = times(&tstruct);
 	// create the actual alpha tree
-	DistanceFunction<uint8_t, 3> delta(image, &minkowski<3,2>);
+	MinkowskiMetricFunction<3> metric(2);
+	DistanceFunction<uint8_t, 3> delta(image, &metric);
 	tree = MakeSalienceTree(image, &delta, CN_4);
 	//tree = MakeSalienceTree(gval, width, height, (double)lambda);
 	AverageFilter<uint8_t, 3> filter(tree, image);
 	Mat out = filter.filter(lambda);
+	Mat out2 = filter.filter(lambda*2);
 
 	musec = (float)(times(&tstruct) - start) / ((float)tickspersec);
 
@@ -94,6 +95,7 @@ int main(int argc, char *argv[])
 	printf("wall-clock time: %f s\n", musec);
 
 	bool success = cv::imwrite(outfname, out);
+	success = success && cv::imwrite("out2.ppm", out2);
 	if(!success)
 		cerr << "Could not write image to " << outfname << "\n"; 
 

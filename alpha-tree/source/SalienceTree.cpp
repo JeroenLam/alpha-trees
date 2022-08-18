@@ -35,7 +35,7 @@ void makeEdge(Mat img, Point a, Point b, EdgeQueue *edgeQueue, AbstractDistanceF
 		return;
 	}
 
-	EdgeQueuePush(edgeQueue, a_index, b_index, delta->getDistance(a, b));
+	EdgeQueuePush(edgeQueue, a_index, b_index, delta->getAlpha(a, b));
 }
 
 void makeEdges(Mat img, Connectivity cn, EdgeQueue *edgeQueue, AbstractDistanceFunction *delta){
@@ -243,6 +243,60 @@ void processEdges(SalienceTree *tree, EdgeQueue *queue, int *sets)
 	}
 }
 
+void finalizeTree(SalienceTree *tree, int imgsize){
+	bool *keepNode = (bool*) calloc(tree->curSize, sizeof(bool));
+	bool *freeIndex = (bool*) calloc(tree->curSize, sizeof(bool));
+	int *nodeMap = (int*) malloc(tree->curSize*sizeof(int));
+	int pi = -1;
+	int pruneAmount = 0;
+
+	for(int i = 0; i < tree->curSize; i++){
+		if(i < imgsize){keepNode[i] = true;} //Keep all leaf nodes
+		else if(!keepNode[i]){ //Node has not been claimed as parent
+			if(pi < 0){pi = i;}
+			freeIndex[i] = true;
+			pruneAmount++;
+			continue;
+		}
+
+		int parent = tree->nodes[i].parent;
+		if (parent != BOTTOM){
+			int levelParent = LevelRoot(tree, parent);
+			tree->nodes[i].parent = levelParent;
+			keepNode[levelParent] = true;
+		}
+
+		nodeMap[i] = i;
+		if(pi >= 0){
+			nodeMap[i] = pi;
+			freeIndex[pi] = false;
+			freeIndex[i] = true;
+			for(; !freeIndex[pi] && pi < i; pi++){};
+		}
+	}
+
+	if(pi < 0){
+		free(keepNode);
+		free(nodeMap);
+		return;
+	}
+
+	SalienceNode *prunedNodes = (SalienceNode*) malloc((tree->curSize - pruneAmount)*sizeof(SalienceNode));
+	for(int i = 0; i < tree->curSize; i++){
+		if(!keepNode[i]){continue;}
+
+		SalienceNode node = tree->nodes[i];
+		node.parent = nodeMap[node.parent];
+		prunedNodes[nodeMap[i]] = node;
+		
+	}
+	tree->nodes = prunedNodes;
+	tree->curSize = tree->curSize - pruneAmount;
+
+	free(keepNode);
+	free(nodeMap);
+}
+
 SalienceTree *MakeSalienceTree(Mat img, AbstractDistanceFunction *delta, Connectivity cn)
 {
 	int imgsize = img.cols*img.rows;
@@ -272,6 +326,8 @@ SalienceTree *MakeSalienceTree(Mat img, AbstractDistanceFunction *delta, Connect
 	makeLeafNodes(tree, sets, imgsize);
 	cout << "Building alpha tree\n";
 	processEdges(tree, queue, sets);
+	cout << "Cleaning alpha tree\n";
+	finalizeTree(tree, imgsize);
 
 	EdgeQueueDelete(queue);
 	free(sets);

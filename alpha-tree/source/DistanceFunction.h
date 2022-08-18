@@ -13,18 +13,40 @@ using cv::sum;
 
 using std::cout;
 
-template<int nCh, int exponent>
-double minkowski(Vec<double, nCh> a, Vec<double, nCh> b){
-	Vec<double, nCh> diff, power;
-	absdiff(a, b, diff);
-	cv::pow(diff, exponent, power);
-	double vecSum = sum(power)[0];
-	return pow(vecSum, 1/((double)exponent));
-}
+template<int nCh>
+class AbstractMetricFunction{
+	typedef Vec<double, nCh> Vector;
+	public:
+		virtual double getDistance(Vector a, Vector b)= 0;
+};
+
+template<int nCh>
+class MinkowskiMetricFunction : public AbstractMetricFunction<nCh>{
+	typedef Vec<double, nCh> Vector;
+
+	private:
+		double exp;
+		Vector wghts;
+
+	public:
+		MinkowskiMetricFunction(double exponent, Vector weights = Vector::ones()){
+			exp = exponent;
+			wghts = weights;
+		}
+
+		double getDistance(Vector a, Vector b){
+			Vector diff, power, weightedPower;
+			absdiff(a, b, diff);
+			cv::pow(diff, exp, power);
+			weightedPower = power.mul(wghts);
+			double vecSum = sum(weightedPower)[0];
+			return pow(vecSum, 1/exp);
+		}
+};
 
 class AbstractDistanceFunction{
 	public:
-		virtual double getDistance(Point a, Point b) = 0;
+		virtual double getAlpha(Point a, Point b) = 0;
 };
 
 template<typename chType, int nCh>
@@ -33,17 +55,17 @@ class DistanceFunction : public AbstractDistanceFunction
 private:
 	Mat img;
 	typedef Vec<double, nCh> Vector;
-	double (*metric)(Vector a, Vector b);
+	AbstractMetricFunction<nCh> *metr;
 public:
-	DistanceFunction(Mat image, double (*distMetric)(Vector a, Vector b)){
+	DistanceFunction(Mat image, AbstractMetricFunction<nCh> *metric){
 		img = image;
-		metric = distMetric;
+		metr = metric;
 	}
 
-	double getDistance(Point a, Point b){
+	double getAlpha(Point a, Point b){
 		Vector aVec = (Vector) img.at<Vec<chType, nCh>>(a);
 		Vector bVec = (Vector) img.at<Vec<chType, nCh>>(b);
-		return metric(aVec, bVec);
+		return metr->getDistance(aVec, bVec);
 	}
 };
 
