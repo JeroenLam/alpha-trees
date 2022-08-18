@@ -13,26 +13,13 @@
 
 #include <opencv2/opencv.hpp>
 
-#include <common.h>
-#include <DistanceMeasures.h>
 #include <SalienceTree.h>
 #include <TreeFilter.h>
 
 using namespace std;
 using cv::Mat;
 
-double RGBweight[3] = {0.5, 0.5, 0.5};
-double MainEdgeWeight = 1.0;
-double OrthogonalEdgeWeight = 1.0;
-double SalienceRange[2] = {0, 10000};
-
-// variables
-//double omegafactor = 200000;
-
-int main(int argc, char *argv[])
-{
-	int width, height, size;
-
+int main(int argc, char *argv[]){
 	string imgfname, outfname = "out.ppm";
 	int r;
 	unsigned long i;
@@ -40,7 +27,6 @@ int main(int argc, char *argv[])
 	struct tms tstruct;
 	long tickspersec = sysconf(_SC_CLK_TCK);
 	float musec;
-	SalienceTree *tree;
 
 	// Check if the right amount of arguments are provided and set variables according to them
 	if (argc < 3)
@@ -64,18 +50,15 @@ int main(int argc, char *argv[])
 		std::cerr << "Failed to read input image!\n";
 		return (-1);
 	}
-	size = image.cols*image.rows;
 
 	cout << "Filtering image '"<< imgfname << "' using attribute area with lambda=" << lambda << "\n";
 	cout << "Image: Width=" << image.cols << "Height=" << image.rows << "\n";
 
-	printf("Data read, start filtering.\n");
 	start = times(&tstruct);
 	// create the actual alpha tree
 	MinkowskiMetricFunction<3> metric(2);
 	DistanceFunction<uint8_t, 3> delta(image, &metric);
-	tree = MakeSalienceTree(image, &delta, CN_4);
-	//tree = MakeSalienceTree(gval, width, height, (double)lambda);
+	SalienceTree tree(image, &delta, CN_4);
 	AverageFilter<uint8_t, 3> filter(tree, image);
 	Mat out = filter.filter(lambda);
 	Mat out2 = filter.filter(lambda*2);
@@ -83,11 +66,6 @@ int main(int argc, char *argv[])
 	musec = (float)(times(&tstruct) - start) / ((float)tickspersec);
 
 	printf("wall-clock time: %f s\n", musec);
-	// apply what we have found in the alpha tree creation to the out image
-	// here colors and areas are created etc.
-	// SalienceTreeAreaFilter(tree,out,lambda);
-	//SalienceTreeSalienceFilter(tree, out, (double)lambda);
-	// SalienceTreeColorMapFilter(tree, out, (double)lambda);
 
 	musec = (float)(times(&tstruct) - start) / ((float)tickspersec);
 

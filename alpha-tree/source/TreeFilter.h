@@ -20,7 +20,7 @@ class AverageFilter{
 		int *sets;
 		Mat image;
 		int imgsize;
-		SalienceTree *tree;
+		SalienceTree& tree;
 		double lambda_prev = -1;
 
 		int NO_SET = -1;
@@ -28,36 +28,35 @@ class AverageFilter{
 	public:
 
 		void colourNodes(){
-			for(int i = imgsize; i < tree->curSize; i++){
+			for(int i = imgsize; i < tree.size(); i++){
 				nodeColours[i] = Vect::zeros();
 			}
 
-			for(int i = 0; i < tree->curSize; i++){
+			for(int i = 0; i < tree.size(); i++){
 				if(i < imgsize){
 					nodeColours[i] = (Vect) image.at<Vec<chType, nCh>>(getPoint(i, image));
 				}else{
-					nodeColours[i] /= tree->nodes[i].area;
+					nodeColours[i] /= tree[i].area;
 				}
-				int parent = tree->nodes[i].parent;
+				int parent = tree[i].parent;
 				if (parent == BOTTOM)
 					continue;
-				nodeColours[parent] += nodeColours[i]*tree->nodes[i].area;
+				nodeColours[parent] += nodeColours[i]*tree[i].area;
 			}
 		}
 
 		void resetSets(){
-			for(int i = 0; i < tree->curSize; i++){
+			for(int i = 0; i < tree.size(); i++){
 				sets[i] = NO_SET;
 			}
 		}
 
-		AverageFilter(SalienceTree *tr, Mat im){
+		AverageFilter(SalienceTree& tr, Mat im) : tree(tr){
 			imgsize = im.cols*im.rows;
 			image = im;
-			tree = tr;
 
-			nodeColours = (Vect*) malloc(tree->curSize*sizeof(Vect));
-			sets = (int *) malloc(tree->curSize*sizeof(int));
+			nodeColours = (Vect*) malloc(tree.size()*sizeof(Vect));
+			sets = (int *) malloc(tree.size()*sizeof(int));
 			resetSets();
 
 			colourNodes();
@@ -69,11 +68,11 @@ class AverageFilter{
 				parent = sets[i];
 			}
 			else{
-				parent = tree->nodes[i].parent;
+				parent = tree[i].parent;
 			}
 			if(parent == BOTTOM)
 				return i;
-			if(tree->nodes[parent].alpha > lambda)
+			if(tree[parent].alpha > lambda)
 				return i;
 			int lambdaNode = findLambdaNode(parent, lambda);
 			sets[i] = lambdaNode;
