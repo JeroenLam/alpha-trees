@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <opencv2/opencv.hpp>
-#include <SalienceTree.h>
+#include <AlphaTree.h>
 #include <TreeFilter.h>
 
 using namespace std;
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]){
 	// create the actual alpha tree
 	MinkowskiMetricFunction<3> metric(2);
 	DistanceFunction<uint8_t, 3> delta(image, metric);
-	SalienceTree tree(image, delta, CN_4, lambda);
+	AlphaTree tree(image, delta, CN_4, lambda);
 	AverageFilter<uint8_t, 3> filter(tree, image);
 	Mat out = filter.filter(lambda);
 	Mat out2 = filter.filter(lambda*2);

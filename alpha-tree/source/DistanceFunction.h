@@ -11,13 +11,28 @@ using cv::sum;
 
 using std::cout;
 
+/**
+ * Base class for metric functions, which define a distance between vectors.
+ *
+ * @tparam nCh number of elements in the vectors on which the distance is defined.
+ * 	I.e. the number of channels in the image.
+ */
 template<int nCh>
 class AbstractMetricFunction{
 	typedef Vec<double, nCh> Vector;
 	public:
+		/**
+		 * Calculates the distance between the given vectors.
+		 * @param a, b Any vector in a space with nCh dimensions.
+		 */
 		virtual double getDistance(Vector& a, Vector& b) const = 0;
 };
 
+/**
+ * Defines minkowski distance, also known as Lp distance.
+ * MinkowskiMetricFunction<3> m(2); defines euclidean distance in 3D space.
+ * MinkowskiMetricFunction<2> m(1); defines manhattan distance in 2D space. 
+ */
 template<int nCh>
 class MinkowskiMetricFunction : public AbstractMetricFunction<nCh>{
 	typedef Vec<double, nCh> Vector;
@@ -27,10 +42,20 @@ class MinkowskiMetricFunction : public AbstractMetricFunction<nCh>{
 		const Vector weights;
 
 	public:
+		/**
+		 * @param exponent the power to which the absolute differences 
+		 * 	between vector entries is raised, and the root applied
+		 * 	to their sum.
+		 * @param weights a vector of weights applied to each dimension.
+		 */
 		MinkowskiMetricFunction(double exponent, Vector weights = Vector::ones())
 		: exponent(exponent)
 		, weights(weights){}
 
+		/**
+		 * @param a, b the vectors whose distance from each other should be calculated.
+		 * @returns the distance between a and b as defined by this metric.
+		 */
 		double getDistance(Vector& a, Vector& b) const{
 			Vector diff, power, weightedPower;
 			absdiff(a, b, diff);
@@ -41,20 +66,47 @@ class MinkowskiMetricFunction : public AbstractMetricFunction<nCh>{
 		}
 };
 
-
+/**
+ * Base class for distance functions. Unlike metric functions that only define
+ * distance between vectors, distance functions define a distance between the 
+ * values of two pixels in a given image. This allows distance function to take
+ * into consideration such things as the texture around the two pixels, the 
+ * image's statistics etc.
+ */
 class AbstractDistanceFunction{
 	public:
+		/**
+		 * Get the alpha value of the edge between the pixels located at
+		 * the given points.
+		 *
+		 * @param a, b a 2D point locating a pixel in the image.
+		 * @return the alpha value of the edge between the pixels at a and b.
+		 */
 		virtual double getAlpha(Point& a, Point& b) const = 0;
 };
 
+/**
+ * The most basic distance function, which simply applies its metric function to
+ * the given image.
+ * 
+ * @tparam chType the datatype of the image's pixels.
+ * @tparam nCh the number of channels in the image.
+ */
 template<typename chType, int nCh>
 class DistanceFunction : public AbstractDistanceFunction{
 private:
 	typedef Vec<double, nCh> Vector;
 
+	// Image on which the distance function is defined
 	const Mat& image;
+
+	// Metric function applied to the pixels' values
 	const AbstractMetricFunction<nCh>& metric;
 public:
+	/**
+	 * @param image the image on which the distance function should be defined
+	 * @param metric the metric function to be applied to the pixels' values
+	 */
 	DistanceFunction(const Mat& image, const AbstractMetricFunction<nCh>& metric)
 	: image(image)
 	, metric(metric){}
