@@ -1,8 +1,6 @@
 #ifndef DISTANCE_FUNCTION_H
 #define DISTANCE_FUNCTION_H
 
-#include <math.h>
-#include <iostream>
 #include <opencv2/opencv.hpp>
 
 using cv::Point;
@@ -17,7 +15,7 @@ template<int nCh>
 class AbstractMetricFunction{
 	typedef Vec<double, nCh> Vector;
 	public:
-		virtual double getDistance(Vector a, Vector b)= 0;
+		virtual double getDistance(Vector& a, Vector& b) const = 0;
 };
 
 template<int nCh>
@@ -25,47 +23,46 @@ class MinkowskiMetricFunction : public AbstractMetricFunction<nCh>{
 	typedef Vec<double, nCh> Vector;
 
 	private:
-		double exp;
-		Vector wghts;
+		const double exponent;
+		const Vector weights;
 
 	public:
-		MinkowskiMetricFunction(double exponent, Vector weights = Vector::ones()){
-			exp = exponent;
-			wghts = weights;
-		}
+		MinkowskiMetricFunction(double exponent, Vector weights = Vector::ones())
+		: exponent(exponent)
+		, weights(weights){}
 
-		double getDistance(Vector a, Vector b){
+		double getDistance(Vector& a, Vector& b) const{
 			Vector diff, power, weightedPower;
 			absdiff(a, b, diff);
-			cv::pow(diff, exp, power);
-			weightedPower = power.mul(wghts);
+			cv::pow(diff, exponent, power);
+			weightedPower = power.mul(weights);
 			double vecSum = sum(weightedPower)[0];
-			return pow(vecSum, 1/exp);
+			return pow(vecSum, 1/exponent);
 		}
 };
+
 
 class AbstractDistanceFunction{
 	public:
-		virtual double getAlpha(Point a, Point b) = 0;
+		virtual double getAlpha(Point& a, Point& b) const = 0;
 };
 
 template<typename chType, int nCh>
-class DistanceFunction : public AbstractDistanceFunction
-{
+class DistanceFunction : public AbstractDistanceFunction{
 private:
-	Mat img;
 	typedef Vec<double, nCh> Vector;
-	AbstractMetricFunction<nCh> *metr;
-public:
-	DistanceFunction(Mat image, AbstractMetricFunction<nCh> *metric){
-		img = image;
-		metr = metric;
-	}
 
-	double getAlpha(Point a, Point b){
-		Vector aVec = (Vector) img.at<Vec<chType, nCh>>(a);
-		Vector bVec = (Vector) img.at<Vec<chType, nCh>>(b);
-		return metr->getDistance(aVec, bVec);
+	const Mat& image;
+	const AbstractMetricFunction<nCh>& metric;
+public:
+	DistanceFunction(const Mat& image, const AbstractMetricFunction<nCh>& metric)
+	: image(image)
+	, metric(metric){}
+
+	double getAlpha(Point& a, Point& b) const{
+		Vector aVec = (Vector) image.at<Vec<chType, nCh>>(a);
+		Vector bVec = (Vector) image.at<Vec<chType, nCh>>(b);
+		return metric.getDistance(aVec, bVec);
 	}
 };
 

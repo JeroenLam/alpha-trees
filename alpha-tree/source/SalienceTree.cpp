@@ -1,30 +1,53 @@
 #include "SalienceTree.h"
-#include "DistanceFunction.h"
-#include <stdlib.h>
-#include <assert.h>
 #include <iostream>
-
 #include <opencv2/opencv.hpp>
 
 using cv::Point;
 using cv::Mat;
-using std::priority_queue;
 
 // i(x,y) = y*width + x
 // x,y (i) = i % width, i//width
 
-Point getPoint(int index, Mat img){
-	int x = index % img.cols;
-	int y = index / img.cols;
-	if(y < 0 || x < 0 || y >= img.rows || x >= img.cols)
-		throw PointOutOfBoundsException();
-	return Point(x,y);
+void SalienceTree::buildTree(bool prune){
+	cout << "Building alpha tree:\n";
+	cout << "\tCreating leaf nodes\n";
+	makeLeafNodes();
+	cout << "\tCreating Edges\n";
+	makeEdges();
+	cout << "\tBuilding alpha tree\n";
+	processEdges();
+	if(prune){
+		cout << "\tPruning alpha tree\n";
+		int nodesPruned = pruneTree();
+		cout << "\t" << nodesPruned << " nodes pruned\n";
+	}
+	cout << "Finished building alpha tree.\n";
 }
 
-int getIndex(Point p, Mat img){
-	if(p.y < 0 || p.x < 0 || p.y >= img.rows || p.x >= img.cols)
-		throw PointOutOfBoundsException();
-	return p.y*img.cols + p.x;
+void SalienceTree::makeLeafNodes(){
+	curSize = imgsize;
+	for(int i = 0; i < imgsize; i++){ 
+		nodes[i].parent = BOTTOM;
+		sets[i] = BOTTOM;
+		nodes[i].alpha = LEAF_ALPHA;
+		nodes[i].area = 1;
+	}
+}
+
+void SalienceTree::makeEdges(){
+	for(int x = 0; x < img.cols; x++){
+		for(int y = 0; y < img.rows; y++){
+			Point p = Point(x,y);
+
+			makeEdge(p, Point(x+1,y));
+			makeEdge(p, Point(x, y+1));
+
+			if (cn == CN_8){
+				makeEdge(p, Point(x-1, y+1));
+				makeEdge(p, Point(x+1, y+1));
+			}
+		}
+	}
 }
 
 void SalienceTree::makeEdge(Point a, Point b){
@@ -36,33 +59,56 @@ void SalienceTree::makeEdge(Point a, Point b){
 		return;
 	}
 	
-	Edge e = {.p = a_index, .q = b_index, .alpha = delta->getAlpha(a,b)}; 
-	queue.push(e);
-}
-
-void SalienceTree::makeEdges(){
-	for(int x = 0; x < img.cols; x++){
-		for(int y = 0; y < img.rows; y++){
-			Point p = Point(x,y);
-			makeEdge(p, Point(x+1,y));
-			makeEdge(p, Point(x,y+1));
-
-			if (cn == CN_8){
-				makeEdge(p, Point(x-1, y+1));
-				makeEdge(p, Point(x+1, y+1));
-			}
-		}
+	Edge e = {.p = a_index, .q = b_index, .alpha = delta.getAlpha(a,b)}; 
+	if(e.alpha <= lambdamin){
+		e.alpha = lambdamin;
+		processEdge(e);
+	}else if(!excludeTop){
+		queue.push(e);
 	}
 }
 
-void SalienceTree::makeLeafNodes(){
-	curSize = imgsize;
-	for(int i = 0; i < imgsize; i++){ 
-		nodes[i].parent = BOTTOM;
-		sets[i] = BOTTOM;
-		nodes[i].alpha = LEAF_ALPHA;
-		nodes[i].area = 1;
+void SalienceTree::processEdges(){
+	while (!queue.empty()){
+		// deque the current edge and temporarily store its values
+		Edge edge = queue.top();
+		queue.pop();
+		processEdge(edge);
 	}
+}
+
+void SalienceTree::processEdge(Edge& edge){
+	int root1 = findRoot(edge.p);
+	int root2 = findRoot(edge.q);
+
+	if (root1 == root2){return;}
+	if (root1 < root2){std::swap(root1, root2);}
+
+	if (nodes[root1].alpha < edge.alpha){
+		// if the higher node has a lower alpha level than the edge
+		// we combine the two nodes in a new salience node
+		int new_root = makeSalienceNode(edge.alpha);
+		mergeNodes(new_root, root1);
+		mergeNodes(new_root, root2);
+	}
+	else{
+		// otherwise we add the lower node to the higher node
+		mergeNodes(root1, root2);
+	}
+
+}
+
+/**
+ * @brief Finds the root of a set of nodes. Also performs path compression.
+ *
+ * @param sets The array containing the set graph
+ * @param p the index in the sets array of the node whose set's root needs to be found
+ */
+int SalienceTree::findRoot(int p){
+	if(sets[p] == BOTTOM){return p;}
+	int root = findRoot(sets[p]);
+	sets[p] = root;
+	return root;
 }
 
 /**
@@ -84,78 +130,10 @@ int SalienceTree::makeSalienceNode(double alpha){
 	return result;
 }
 
-/**
- * @brief Finds the root of a set of nodes. Also performs path compression.
- *
- * @param sets The array containing the set graph
- * @param p the index in the sets array of the node whose set's root needs to be found
- */
-int SalienceTree::findRoot(int p){
-	if(sets[p] == BOTTOM){return p;}
-	int root = findRoot(sets[p]);
-	sets[p] = root;
-	return root;
-}
-
-/**
- * @brief Determine if a node at a given index is the root of its level of the tree.
- * A node is considered the level root if it has the same alpha level as its parent
- * or does not have a parent.
- * 
- * @param tree Tree to check
- * @param i Index of the node
- * @return true if the node is at root level
- * @return false if the node is not at root level
- */
-bool SalienceTree::isLevelRoot(int i){
-	int parent = nodes[i].parent;
-	if (parent == BOTTOM){return true;}
-	return (nodes[i].alpha != nodes[parent].alpha);
-}
-
-/**
- * @brief Finds the root node of the alpha level of a given node.
- * 
- * @param tree Tree to search
- * @param p Node to find the level root of
- * @return int Index of the level root
- */
-int SalienceTree::findLevelRoot(int p){
-	if(isLevelRoot(p)){return p;}
-	int root = findLevelRoot(nodes[p].parent);
-	nodes[p].parent = root;
-	return root;
-}
-
 void SalienceTree::mergeNodes(int p, int q){
 	nodes[q].parent = p;
 	sets[q] = p;
 	nodes[p].area += nodes[q].area;
-}
-
-void SalienceTree::processEdges(){
-	while (!queue.empty()){
-		// deque the current edge and temporarily store its values
-		Edge edge = queue.top();
-		queue.pop();
-		int root1 = findRoot(edge.p);
-		int root2 = findRoot(edge.q);
-
-		if (root1 == root2){continue;}
-		if (root1 < root2){std::swap(root1, root2);}
-
-		if (nodes[root1].alpha < edge.alpha){
-			// if the higher node has a lower alpha level than the edge
-			// we combine the two nodes in a new salience node
-			int new_root = makeSalienceNode(edge.alpha);
-			mergeNodes(new_root, root1);
-			mergeNodes(new_root, root2);
-		}
-		else{
-			// otherwise we add the lower node to the higher node
-			mergeNodes(root1, root2);
-		}
-	}
 }
 
 int SalienceTree::pruneTree(){
@@ -203,7 +181,9 @@ int SalienceTree::pruneTree(){
 		if(!keepNode[i]){continue;}
 
 		SalienceNode node = nodes[i];
-		node.parent = nodeMap[node.parent];
+		if(node.parent != BOTTOM){
+			node.parent = nodeMap[node.parent];
+		}
 		prunedNodes[nodeMap[i]] = node;
 		
 	}
@@ -217,26 +197,55 @@ int SalienceTree::pruneTree(){
 	return pruneAmount;
 }
 
-void SalienceTree::buildTree(bool prune){
-	cout << "Building alpha tree:\n";
-	cout << "\tCreating Edges\n";
-	makeEdges();
-	cout << "\tCreating leaf nodes\n";
-	makeLeafNodes();
-	cout << "\tBuilding alpha tree\n";
-	processEdges();
-	if(prune){
-		cout << "\tPruning alpha tree\n";
-		int nodesPruned = pruneTree();
-		cout << "\t" << nodesPruned << " nodes pruned\n";
-	}
-	cout << "Finished building alpha tree.\n";
+/**
+ * @brief Finds the root node of the alpha level of a given node.
+ * 
+ * @param tree Tree to search
+ * @param p Node to find the level root of
+ * @return int Index of the level root
+ */
+int SalienceTree::findLevelRoot(int p){
+	if(isLevelRoot(p)){return p;}
+	int root = findLevelRoot(nodes[p].parent);
+	nodes[p].parent = root;
+	return root;
 }
 
-int SalienceTree::size(){
+/**
+ * @brief Determine if a node at a given index is the root of its level of the tree.
+ * A node is considered the level root if it has the same alpha level as its parent
+ * or does not have a parent.
+ * 
+ * @param tree Tree to check
+ * @param i Index of the node
+ * @return true if the node is at root level
+ * @return false if the node is not at root level
+ */
+bool SalienceTree::isLevelRoot(int i){
+	int parent = nodes[i].parent;
+	if (parent == BOTTOM){return true;}
+	return (nodes[i].alpha != nodes[parent].alpha);
+}
+
+int SalienceTree::size() const {
 	return curSize;
 }
 
-SalienceNode& SalienceTree::operator[](int index){
+const SalienceNode& SalienceTree::operator[] (int index) const {
 	return nodes[index];
 }
+
+Point getPoint(int index, const Mat& img){
+	int x = index % img.cols;
+	int y = index / img.cols;
+	if(y < 0 || x < 0 || y >= img.rows || x >= img.cols)
+		throw PointOutOfBoundsException();
+	return Point(x,y);
+}
+
+int getIndex(Point& p, const Mat& img){
+	if(p.y < 0 || p.x < 0 || p.y >= img.rows || p.x >= img.cols)
+		throw PointOutOfBoundsException();
+	return p.y*img.cols + p.x;
+}
+

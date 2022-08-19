@@ -1,9 +1,9 @@
 #ifndef SALIENCE_TREE_H
 #define SALIENCE_TREE_H
 
-#include <iostream>
 #include <queue>
 #include <vector>
+
 #include <opencv2/opencv.hpp>
 
 #include "DistanceFunction.h"
@@ -15,12 +15,13 @@ using std::vector;
 
 #define BOTTOM (-1)
 #define LEAF_ALPHA (-1)
+enum Connectivity {CN_4 = 4, CN_8 = 8};
 
 struct Edge{
 	int p, q;
 	double alpha;
 
-	friend bool operator< (Edge const& lhs, Edge const& rhs){
+	friend bool operator< (const Edge& lhs, const Edge& rhs){
 		return lhs.alpha >= rhs.alpha;
 	}
 };
@@ -33,34 +34,31 @@ class EdgeQueue : public priority_queue<Edge, vector<Edge>>{
 		}
 };
 
-class PointOutOfBoundsException : std::exception {
-	public:
-		std::string what (){ return "Point out of bounds"; }
-
-};
-
 typedef struct SalienceNode{
 	int parent;
 	int area;
 	double alpha;  /* alpha of flat zone */
 } SalienceNode;
 
-enum Connectivity {CN_4 = 4, CN_8 = 8};
-
 class SalienceTree{
 	private:		
-		int maxSize;
+		//Constructor arguments
+		const Mat& img;
+		const AbstractDistanceFunction& delta;
+		const Connectivity cn;
+		const double lambdamin;
+		const bool excludeTop;
+
+		//Size-related variables
 		int curSize = 0;
-		Mat img;
-		int imgsize;
-		AbstractDistanceFunction *delta;
-		Connectivity cn;
+		const int imgsize;
 
 		int *sets;
 		SalienceNode *nodes;
 		EdgeQueue queue;
 
 		void makeEdge(Point a, Point b);
+		void processEdge(Edge &edge);
 		int makeSalienceNode(double alpha);
 		int findRoot(int p);
 		bool isLevelRoot(int i);
@@ -76,18 +74,17 @@ class SalienceTree{
 
 	public:
 		
-		SalienceTree(Mat img, AbstractDistanceFunction *delta, Connectivity cn) 
-		: queue((cn/2)*img.cols*img.rows){
-			this->img = img;
-			this->delta = delta;
-			this->cn = cn;
-
-			imgsize = img.cols*img.rows;
-			maxSize = 2*imgsize; 
+		SalienceTree(const Mat& img, const AbstractDistanceFunction& delta, Connectivity cn, double lambdamin = 0, double excludeTop = false)
+		: img(img)
+		, delta(delta)
+		, cn(cn)
+		, lambdamin(lambdamin)
+		, excludeTop(excludeTop)
+		, imgsize(img.cols*img.rows)
+		, queue((cn/2)*img.cols*img.rows){
 
 			sets = (int*) malloc(imgsize*2*sizeof(int));
-			nodes = (SalienceNode*) malloc((maxSize) * sizeof(SalienceNode));
-
+			nodes = (SalienceNode*) malloc((2*imgsize) * sizeof(SalienceNode));
 			buildTree();
 		};
 		
@@ -96,12 +93,18 @@ class SalienceTree{
 			free(nodes);
 		}
 
-		int size();
+		int size() const;
 
-		SalienceNode& operator[](int index);
+		const SalienceNode& operator[] (int index) const;
 };
 
+class PointOutOfBoundsException : std::exception {
+	public:
+		std::string what (){ return "Point out of bounds"; }
 
-Point getPoint(int index, Mat image);
+};
+
+Point getPoint(int index, const Mat& image);
+int getIndex(Point& p, const Mat& img);
 
 #endif

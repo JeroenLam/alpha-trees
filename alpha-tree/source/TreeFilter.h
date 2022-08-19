@@ -1,31 +1,50 @@
 #ifndef TREE_FILTER_H
 #define TREE_FILTER_H
 
+#include <iostream>
 #include <opencv2/opencv.hpp>
 #include <SalienceTree.h>
-#include <iostream>
-
 
 using cv::Vec;
 using cv::Mat;
 
 template <typename chType, int nCh>
 class AverageFilter{
-
 	typedef Vec<double, nCh> Vect;
 
 
 	private:
+		const SalienceTree& tree;
+		const Mat& image;
+
 		Vect *nodeColours;
 		int *sets;
-		Mat image;
-		int imgsize;
-		SalienceTree& tree;
+		const int imgsize;
 		double lambda_prev = -1;
 
 		int NO_SET = -1;
 
 	public:
+
+		AverageFilter(const SalienceTree& tr, const Mat& image) 
+			: tree(tr)
+			, image(image)
+			, imgsize(image.cols*image.rows){
+			cout << "Creating filter:\n";
+
+			nodeColours = (Vect*) malloc(tree.size()*sizeof(Vect));
+			sets = (int *) malloc(tree.size()*sizeof(int));
+			resetSets();
+
+			cout << "\t Colouring nodes\n";
+			colourNodes();
+		}
+
+		void resetSets(){
+			for(int i = 0; i < tree.size(); i++){
+				sets[i] = NO_SET;
+			}
+		}
 
 		void colourNodes(){
 			for(int i = imgsize; i < tree.size(); i++){
@@ -45,44 +64,11 @@ class AverageFilter{
 			}
 		}
 
-		void resetSets(){
-			for(int i = 0; i < tree.size(); i++){
-				sets[i] = NO_SET;
-			}
-		}
-
-		AverageFilter(SalienceTree& tr, Mat im) : tree(tr){
-			imgsize = im.cols*im.rows;
-			image = im;
-
-			nodeColours = (Vect*) malloc(tree.size()*sizeof(Vect));
-			sets = (int *) malloc(tree.size()*sizeof(int));
-			resetSets();
-
-			colourNodes();
-		}
-
-		int findLambdaNode(int i, double lambda){
-			int parent;
-			if(sets[i] != NO_SET){
-				parent = sets[i];
-			}
-			else{
-				parent = tree[i].parent;
-			}
-			if(parent == BOTTOM)
-				return i;
-			if(tree[parent].alpha > lambda)
-				return i;
-			int lambdaNode = findLambdaNode(parent, lambda);
-			sets[i] = lambdaNode;
-			return lambdaNode;
-		}
-
 		Mat filter(double lambda){
+			cout << "Applying filter with lambda=" << lambda << "\n";
 			if(lambda < lambda_prev){
-				std::cerr << "filtering at lambda=" << lambda << " after filtering at lambda=" << lambda_prev << "\n"; 
-				std::cerr << "WARNING: filtering at ascending values of lambda is faster\n";
+				std::cerr << "\tfiltering at lambda=" << lambda << " after filtering at lambda=" << lambda_prev << "\n"; 
+				std::cerr << "\tWARNING: filtering at ascending values of lambda is faster\n";
 				resetSets();
 			}
 			lambda_prev = lambda;
@@ -93,6 +79,21 @@ class AverageFilter{
 				result.at<Vect>(getPoint(i, image)) = nodeColours[n];
 			}
 			return result;
+		}
+
+		int findLambdaNode(int i, double lambda){
+			int parent;
+			if(sets[i] != NO_SET){
+				parent = sets[i];
+			}
+			else{
+				parent = tree[i].parent;
+			}
+			if(parent == BOTTOM || tree[parent].alpha > lambda)
+				return i;
+			int lambdaNode = findLambdaNode(parent, lambda);
+			sets[i] = lambdaNode;
+			return lambdaNode;
 		}
 
 		~AverageFilter(){
