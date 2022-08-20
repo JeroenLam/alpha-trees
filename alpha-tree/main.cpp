@@ -41,9 +41,12 @@ int main(int argc, char *argv[]){
 	MinkowskiMetricFunction<3> metric(2);
 	DistanceFunction<uint8_t, 3> delta(image, metric);
 	AlphaTree tree(image, delta, CN_4, lambda);
-	AverageFilter<uint8_t, 3> filter(tree, image);
-	Mat out = filter.filter(lambda);
-	Mat out2 = filter.filter(lambda*2);
+	//AverageFilter<uint8_t, 3> filter(tree, image);
+	RandomFilter filter(tree, image);
+	Mat out = Mat::zeros(image.rows, image.cols, CV_8UC(3));
+	Mat out2 = Mat::zeros(image.rows, image.cols, image.type());
+	filter.filter(lambda, out);
+	filter.filter(lambda*2, out2);
 
 	float musec = (float)(times(&tstruct) - start) / ((float)tickspersec);
 

@@ -139,7 +139,7 @@ class AlphaTree{
 		 * If the edge's alpha value is higher than lambdamin and 
 		 * excludeTop is set to true, the edge is discarded.
 		 *
-		 * Otherwise, it is enqueued in the edge queue/
+		 * Otherwise, it is enqueued in the edge queue
 		 *
 		 * If either of the points lies outside the image, no edge is 
 		 * created.
@@ -259,7 +259,7 @@ class AlphaTree{
 		 * @param img Image used to build the tree.
 		 * @param delta Distance function used to calculate the alpha level of edges between pixels
 		 * @param cn Connectivity of the image's pixels
-		 * @param lambdamin Minimum alpha value a non-leaf node in the image should have
+		 * @param lambdamin Minimum alpha value a non-leaf node in the tree should have
 		 * @param excludeTop Whether nodes with a value higher than lambdamin should be ignored. If true, the tree only defines lambdamin-flatzones.
 		 */
 		AlphaTree(const Mat& img, const AbstractDistanceFunction& delta, Connectivity cn, double lambdamin = 0, double excludeTop = false)
