@@ -206,6 +206,10 @@ int AlphaTree::size() const {
 	return curSize;
 }
 
+int AlphaTree::nLeaves() const {
+	return imgsize;
+}
+
 const AlphaNode& AlphaTree::operator[] (int index) const {
 	return nodes[index];
 }

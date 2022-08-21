@@ -100,13 +100,22 @@ class AbstractFilter{
 
 		/**
 		 * Apply the filter to the image at the given alpha value and 
-		 * return the result.
+		 * put the result in the given destination matrix.
 		 *
-		 * @param lambda the alpha level at which to apply the filter
-		 * @return a filtered copy of the image.
+		 * @param lambda The alpha level at which to apply the filter
+		 * @param destination The matrix that will hold the filtered image
+		 * 	should be of the appropriate type and dimensions for the
+		 * 	filter used.
+		 * @param log Wether the use of the filter should be printed to stdout
 		 */
-		void filter(double lambda, Mat& destination){
-			cout << "Applying filter with lambda=" << lambda << "\n";
+		void filter(double lambda, Mat& destination, bool log = true){
+			if(lambda < 0){
+				std::cerr << "Cannot filter with lambda < 0!\n";
+				return;
+			}
+			if(log){
+				cout << "Applying filter with lambda=" << lambda << "\n";
+			}
 			if(lambda < lambda_prev){
 				std::cerr << "\tfiltering at lambda=" << lambda << " after filtering at lambda=" << lambda_prev << "\n"; 
 				std::cerr << "\tWARNING: filtering at ascending values of lambda is faster\n";
@@ -241,7 +250,7 @@ class RandomFilter : public AbstractFilter{
 				}
 				int parent = tree[i].parent;
 				if(parent == BOTTOM){continue;}
-				if(tree[i].area > largestChildArea[parent]){
+				if(tree[i].area >= largestChildArea[parent]){
 					largestChildArea[parent] = tree[i].area;
 					nodeColours[parent] = nodeColours[i];
 				}

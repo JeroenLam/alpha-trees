@@ -287,6 +287,11 @@ class AlphaTree{
 		int size() const;
 
 		/**
+		 * @return the number of leaf nodes in the tree
+		 */
+		int nLeaves() const;
+
+		/**
 		 * @return The AlphaNode with the given index
 		 */
 		const AlphaNode& operator[] (int index) const;

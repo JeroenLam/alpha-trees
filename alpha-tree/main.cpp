@@ -4,6 +4,7 @@
 #include <opencv2/opencv.hpp>
 #include <AlphaTree.h>
 #include <TreeFilter.h>
+#include <TreeDisplay.h>
 
 using namespace std;
 using cv::Mat;
@@ -20,7 +21,7 @@ int main(int argc, char *argv[]){
 
 	string imgfname = argv[1];
 
-	int lambda = atoi(argv[2]);
+	double lambda = atof(argv[2]);
 
 	string outfname = "out.ppm";
 	if (argc > 3)
@@ -40,13 +41,14 @@ int main(int argc, char *argv[]){
 	// create the actual alpha tree
 	MinkowskiMetricFunction<3> metric(2);
 	DistanceFunction<uint8_t, 3> delta(image, metric);
-	AlphaTree tree(image, delta, CN_4, lambda);
-	//AverageFilter<uint8_t, 3> filter(tree, image);
-	RandomFilter filter(tree, image);
+	AlphaTree tree(image, delta, CN_4);
+	AverageFilter<uint8_t, 3> filter(tree, image);
+	//RandomFilter filter(tree, image);
+	double outLambda = displayTree(image, tree, filter, 100, lambda);
 	Mat out = Mat::zeros(image.rows, image.cols, CV_8UC(3));
 	Mat out2 = Mat::zeros(image.rows, image.cols, image.type());
-	filter.filter(lambda, out);
-	filter.filter(lambda*2, out2);
+	filter.filter(outLambda, out);
+	filter.filter(outLambda*2, out2);
 
 	float musec = (float)(times(&tstruct) - start) / ((float)tickspersec);
 
