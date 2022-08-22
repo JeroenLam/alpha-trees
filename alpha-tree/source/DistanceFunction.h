@@ -3,6 +3,8 @@
 
 #include <opencv2/opencv.hpp>
 
+#include "gabor/gabor.h"
+
 using cv::Point;
 using cv::Vec;
 using cv::Mat;
@@ -94,28 +96,104 @@ class AbstractDistanceFunction{
  */
 template<typename chType, int nCh>
 class DistanceFunction : public AbstractDistanceFunction{
-private:
 	typedef Vec<double, nCh> Vector;
+	protected:
+		// Image on which the distance function is defined
+		const Mat& image;
 
-	// Image on which the distance function is defined
-	const Mat& image;
+		// Metric function applied to the pixels' values
+		const AbstractMetricFunction<nCh>& metric;
+	public:
+		/**
+		 * @param image the image on which the distance function should be defined
+		 * @param metric the metric function to be applied to the pixels' values
+		 */
+		DistanceFunction(const Mat& image, const AbstractMetricFunction<nCh>& metric)
+		: image(image)
+		, metric(metric){}
 
-	// Metric function applied to the pixels' values
-	const AbstractMetricFunction<nCh>& metric;
-public:
-	/**
-	 * @param image the image on which the distance function should be defined
-	 * @param metric the metric function to be applied to the pixels' values
-	 */
-	DistanceFunction(const Mat& image, const AbstractMetricFunction<nCh>& metric)
-	: image(image)
-	, metric(metric){}
+		double getAlpha(Point& a, Point& b) const{
+			Vector aVec = (Vector) image.at<Vec<chType, nCh>>(a);
+			Vector bVec = (Vector) image.at<Vec<chType, nCh>>(b);
+			return metric.getDistance(aVec, bVec);
+		}
+};
 
-	double getAlpha(Point& a, Point& b) const{
-		Vector aVec = (Vector) image.at<Vec<chType, nCh>>(a);
-		Vector bVec = (Vector) image.at<Vec<chType, nCh>>(b);
-		return metric.getDistance(aVec, bVec);
-	}
+template<typename chType, int nCh>
+class SimpleGaborDistanceFunction : public DistanceFunction<chType, nCh>{
+		typedef Vec<double, nCh> Vector;
+		private:
+			Mat filteredImage;
+			const int nAngles;
+			const double matchFactor;
+			const bool binaryMatch;
+			const RidgeType ridgeType;
+		public:
+			SimpleGaborDistanceFunction(
+					const Mat& image, 
+					const AbstractMetricFunction<nCh>& metric, 
+					const Mat& image_grey, 
+					double lambda, 
+					double gamma,
+					double sigma,
+					int nAngles, 
+					double thresholdFactor,
+					double matchFactor,
+					RidgeType ridgeType = LIGHT,
+					bool binaryMatch = true
+					)
+			: DistanceFunction<chType, nCh>(image, metric)
+			, nAngles(nAngles)
+			, matchFactor(matchFactor)
+			, binaryMatch(binaryMatch)
+			, ridgeType(ridgeType){
+				mainDirections(image_grey, lambda, gamma, sigma, nAngles, thresholdFactor, filteredImage, ridgeType);
+			}
+
+			SimpleGaborDistanceFunction(
+					const Mat& image, 
+					const AbstractMetricFunction<nCh>& metric, 
+					ColorConversionCodes conversionCode, 
+					double lambda, 
+					double gamma,
+					double sigma,
+					int nAngles, 
+					double thresholdFactor,
+					double matchFactor,
+					RidgeType ridgeType = LIGHT,
+					bool binaryMatch = true
+					)
+			: DistanceFunction<chType, nCh>(image, metric)
+			, nAngles(nAngles)
+			, matchFactor(matchFactor)
+			, binaryMatch(binaryMatch)
+			, ridgeType(ridgeType){
+				Mat image_grey;
+				cvtColor(image, image_grey, conversionCode);
+				mainDirections(image_grey, lambda, gamma, sigma, nAngles, thresholdFactor, filteredImage, ridgeType);
+			}
+
+			const Mat& getFilteredImage(){
+				return filteredImage;
+			}
+
+			void getGreyFilteredImage(Mat &destination){
+				int max = nAngles;
+				int min = ridgeType == BOTH ? -nAngles : 0;
+				int multiply = 255/(max - min);
+				int add = ridgeType == BOTH ? 255/2 : 0;
+				filteredImage.convertTo(destination, CV_8U, multiply, add);
+			}
+			
+			double getAlpha(Point& a, Point& b) const{
+				double alpha = DistanceFunction<chType, nCh>::getAlpha(a, b);
+				int8_t dirA = filteredImage.at<int8_t>(a); 
+				int8_t dirB = filteredImage.at<int8_t>(b); 
+				if(dirA && dirA == dirB){
+					alpha *= matchFactor;
+				}
+				return alpha;
+			}
 };
 
 #endif

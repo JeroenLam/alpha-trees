@@ -57,24 +57,37 @@ void onChange(int, void* data) {
  * @param tree Alpha tree whose alpha values the range should be based on.
  * @param nSlices The number of alpha values to generate
  */
-vector<double> alphaValueRange(const AlphaTree& tree, int nSlices){
+vector<double> alphaValueRange(const AlphaTree& tree, int nSlices, double upper, double lower){
 
 	vector<double> values;
 	nSlices = nSlices < 2 ? 0 : nSlices - 2;
-	values.push_back(0);
-	double step = (tree[tree.size()-1].alpha)/(nSlices+1);
+	if(!upper){upper = tree[tree.size()-1].alpha;}
+	values.push_back(lower);
+	double step = (upper - lower)/(nSlices+1);
 
 	for(int i = 1; i <= nSlices; i++){
-		values.push_back(i*step);
+		values.push_back(lower + i*step);
 	}
 
-	values.push_back(tree[tree.size()-1].alpha);
-	cout << "SIZE " << nSlices << "\n";
+	values.push_back(upper);
 	return values;
 }
 
-double displayTree(const Mat& image, const AlphaTree& tree, AbstractFilter& filter, int nSlices, double initLambda = 0){
-	vector<double> alphaValues = alphaValueRange(tree, nSlices);
+double displayTree(
+		const Mat& image, 
+		const vector<Mat>& compareImages, 
+		const AlphaTree& tree, 
+		AbstractFilter& filter, 
+		int nSlices, 
+		double initLambda, 
+		double alphaUpper,
+		double alphaLower
+		){
+	Mat compareImage(image);
+	for(Mat cImage : compareImages){
+		hconcat(compareImage, cImage, compareImage);
+	}
+	vector<double> alphaValues = alphaValueRange(tree, nSlices, alphaUpper, alphaLower);
 	nSlices = alphaValues.size();
 	vector<Mat> outImages;
 
@@ -89,7 +102,7 @@ double displayTree(const Mat& image, const AlphaTree& tree, AbstractFilter& filt
 		Mat out;
 		Mat filtered(image.rows, image.cols, CV_8UC(3));
 		filter.filter(alphaValues[i], filtered, false);
-		hconcat(image, filtered, out);
+		hconcat(compareImage, filtered, out);
 		outImages.push_back(out);
 
 		// Check if this image should be the first to be displayed

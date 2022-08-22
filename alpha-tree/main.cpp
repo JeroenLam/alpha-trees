@@ -38,13 +38,33 @@ int main(int argc, char *argv[]){
 	cout << "Image: Width=" << image.cols << "Height=" << image.rows << "\n";
 
 	clock_t start = times(&tstruct);
+
 	// create the actual alpha tree
 	MinkowskiMetricFunction<3> metric(2);
-	DistanceFunction<uint8_t, 3> delta(image, metric);
-	AlphaTree tree(image, delta, CN_4);
-	AverageFilter<uint8_t, 3> filter(tree, image);
-	//RandomFilter filter(tree, image);
-	double outLambda = displayTree(image, tree, filter, 100, lambda);
+	//DistanceFunction<uint8_t, 3> delta(image, metric);
+	SimpleGaborDistanceFunction<uint8_t, 3> delta(
+			image, 
+			metric, 
+			COLOR_BGR2GRAY,
+			4, // lambda: wavelength of sine function, i.e. ridge width
+			0.5, // gamma: aspect ratio of the gaussian function
+			1, // sigma: standard deviation of gaussian function
+			32, // nAngles: number of axes in the filter bank BUG: nAngles=8 messes with things for some reason
+			4, // thresholdFactor
+			0,  // matchFactor
+			LIGHT, //ridgeType
+			true  //binaryMatch: true is not yet implemented
+		);
+	AlphaTree tree(image, delta, CN_8);
+	//AverageFilter<uint8_t, 3> filter(tree, image);
+	RandomFilter filter(tree, image);
+
+
+	Mat gaborFiltered;
+	delta.getGreyFilteredImage(gaborFiltered);
+	cvtColor(gaborFiltered, gaborFiltered, COLOR_GRAY2BGR);
+	vector<Mat> compareImages{gaborFiltered};
+	double outLambda = displayTree(image, compareImages, tree, filter, 100, lambda, 25);
 	Mat out = Mat::zeros(image.rows, image.cols, CV_8UC(3));
 	Mat out2 = Mat::zeros(image.rows, image.cols, image.type());
 	filter.filter(outLambda, out);
