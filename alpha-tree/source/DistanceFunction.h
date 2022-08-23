@@ -189,8 +189,19 @@ class SimpleGaborDistanceFunction : public DistanceFunction<chType, nCh>{
 				double alpha = DistanceFunction<chType, nCh>::getAlpha(a, b);
 				int8_t dirA = filteredImage.at<int8_t>(a); 
 				int8_t dirB = filteredImage.at<int8_t>(b); 
-				if(dirA && dirA == dirB){
-					alpha *= matchFactor;
+
+				if(!dirA || !dirB){ return alpha;}
+				if(binaryMatch){
+					if(dirA == dirB){
+						alpha *= matchFactor;
+					}
+				}else if(dirA*dirB > 0){
+					dirA = dirA > 0 ? dirA : -dirA;
+					dirB = dirB > 0 ? dirB : -dirB;
+					if(dirA >= dirB){swap(dirA, dirB);}
+					double angleDifference = MIN(dirB-dirA, nAngles+dirA-dirB)/((double)(nAngles/2));
+					double factor = matchFactor + (1-matchFactor)*angleDifference;
+					alpha *= factor;
 				}
 				return alpha;
 			}

@@ -49,11 +49,11 @@ int main(int argc, char *argv[]){
 			4, // lambda: wavelength of sine function, i.e. ridge width
 			0.5, // gamma: aspect ratio of the gaussian function
 			1, // sigma: standard deviation of gaussian function
-			32, // nAngles: number of axes in the filter bank BUG: nAngles=8 messes with things for some reason
-			4, // thresholdFactor
-			0,  // matchFactor
+			32, // nAngles: number of axes in the filter bank BUG: nAngles=8 or 128messes with things for some reason
+			8, // thresholdFactor
+			0.5,  // matchFactor
 			LIGHT, //ridgeType
-			true  //binaryMatch: true is not yet implemented
+			false  //binaryMatch: true is not yet implemented
 		);
 	AlphaTree tree(image, delta, CN_8);
 	//AverageFilter<uint8_t, 3> filter(tree, image);
