@@ -33,18 +33,17 @@ Pixel *gval = NULL;
 Pixel *out = NULL;
 
 // Set the function you want to use to compute the alpha between two pixels here
-SalienceFunction salienceFunction = &WeightedEuclideanDistance;
+SalienceFunction salienceFunction = &CosineDistance;
 // Set the functions you want to use to compute edge strength here
 EdgeStrengthFunction edgeStrengthX = &EdgeStrengthX;
 EdgeStrengthFunction edgeStrengthY = &EdgeStrengthY;
 // diagonals for 8-Connectivity
 EdgeStrengthFunction edgeStrengthTL_BR = NULL;
 EdgeStrengthFunction edgeStrengthBL_TR = NULL;
-boolean normalize = false;
+boolean normalize = true;
 
 int main(int argc, char *argv[])
 {
-
   char *imgfname, *outfname = "out.ppm";
   int r;
   unsigned long i;

@@ -159,6 +159,9 @@ void ImageGenerator::fill_with_color(Triple color) {
 }
 
 void ImageGenerator::draw_point(Triple color, int x, int y, int thickness) {
+    color.x = (int)color.x;
+    color.y = (int)color.y;
+    color.z = (int)color.z;
     if (thickness > 1)  {
         for (int i = -(thickness - 1); i < (thickness - 1); i++) {
             for (int j = -(thickness - 1); j < (thickness - 1); j++) {
