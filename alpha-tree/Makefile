@@ -6,7 +6,7 @@ build_sub_dirs:
 	gcc -O2 -c main.c
 
 build_project: util
-	gcc util/PPMImageReadWrite.o util/EdgeDetection.o util/TreeFilter.o source/EdgeQueue.o source/SalienceTree.o main.o -o saliencetree
+	gcc util/PPMImageReadWrite.o util/EdgeDetection.o util/TreeFilter.o source/EdgeQueue.o source/SalienceTree.o main.o -lm -o saliencetree
 
 clean:
 	rm -f *~

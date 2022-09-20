@@ -88,6 +88,10 @@ int main(int argc, char *argv[])
   printf("wall-clock time: %f s\n", musec);
 
   r = ImagePPMBinWrite(outfname);
+
+  SalienceTreeSalienceFilter(tree, out, (double)(2 * lambda));
+  r = ImagePPMBinWrite("out-2.ppm");
+
   free(out);
   if (r)
     printf("Filtered image written to '%s'\n", outfname);

@@ -51,6 +51,7 @@ void DeleteTree(SalienceTree *tree)
   free(tree);
 }
 
+
 /**
  * @brief Create a Salience Node object in a given tree
  * 
